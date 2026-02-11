@@ -1,33 +1,38 @@
 import { Head, usePage } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import Section from '@/components/public/Section';
+import PageHero from '@/components/public/PageHero';
+import type { SharedData, PageData } from '@/types';
+
+interface MembersProps extends SharedData {
+    page: PageData;
+}
 
 export default function Members() {
-    const { page, translations } = usePage().props as any;
+    const { page, translations } = usePage<MembersProps>().props;
     const t = translations?.ui ?? {};
 
     return (
         <PublicLayout>
             <Head title={page?.title ?? t.nav_members ?? 'Члены'} />
 
-            <section className="bg-primary py-20 text-primary-foreground">
-                <div className="container">
-                    <h1 className="text-4xl font-bold md:text-5xl">
-                        {page?.title ?? t.nav_members ?? 'Члены Ассоциации'}
-                    </h1>
-                </div>
-            </section>
+            <PageHero
+                title={page?.title ?? t.nav_members ?? 'Члены Ассоциации'}
+                subtitle={t.nav_members ?? 'Члены'}
+            />
 
-            <Section title="">
+            <Section>
                 {page?.content ? (
                     <div
-                        className="prose prose-lg max-w-none"
+                        className="prose-public mx-auto max-w-3xl"
                         dangerouslySetInnerHTML={{ __html: page.content }}
                     />
                 ) : (
-                    <p className="text-lg text-muted-foreground">
-                        {t.no_members_yet ?? 'Информация о членах ассоциации будет добавлена в ближайшее время.'}
-                    </p>
+                    <div className="mx-auto max-w-3xl text-center">
+                        <p className="text-lg text-muted-foreground">
+                            {t.no_members_yet ?? 'Информация о членах ассоциации будет добавлена в ближайшее время.'}
+                        </p>
+                    </div>
                 )}
             </Section>
         </PublicLayout>

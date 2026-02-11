@@ -65,16 +65,11 @@ const handleSystemThemeChange = (): void => {
 export function initializeTheme(): void {
     if (typeof window === 'undefined') return;
 
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
-    }
-
-    currentAppearance = getStoredAppearance();
-    applyTheme(currentAppearance);
-
-    // Set up system theme change listener
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    // Force light mode only
+    currentAppearance = 'light';
+    localStorage.setItem('appearance', 'light');
+    setCookie('appearance', 'light');
+    applyTheme('light');
 }
 
 export function useAppearance(): UseAppearanceReturn {

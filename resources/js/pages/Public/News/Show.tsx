@@ -2,61 +2,87 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import Section from '@/components/public/Section';
 import { url } from '@/lib/url';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, User } from 'lucide-react';
+import type { SharedData, PostDetail, PostCategory, PostTag } from '@/types';
+
+interface NewsShowProps extends SharedData {
+    post: PostDetail;
+}
 
 export default function Show() {
-    const { post, locale, translations } = usePage().props as any;
+    const { post, locale, translations } = usePage<NewsShowProps>().props;
     const t = translations?.ui ?? {};
 
     return (
         <PublicLayout>
             <Head title={post?.meta?.title ?? post?.title ?? 'Новость'} />
 
-            <section className="bg-primary py-20 text-primary-foreground">
-                <div className="container">
+            <section className="bg-primary pt-16 text-primary-foreground">
+                <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">
                     <Link
                         href={url('/news', locale)}
-                        className="mb-4 inline-flex items-center gap-2 text-sm text-primary-foreground/70 hover:text-primary-foreground"
+                        className="mb-4 inline-flex items-center gap-1.5 text-sm text-primary-foreground/60 transition hover:text-primary-foreground"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         {t.back_to_news ?? 'Назад к новостям'}
                     </Link>
-                    <h1 className="text-3xl font-bold md:text-4xl">{post?.title}</h1>
-                    <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-primary-foreground/70">
-                        {post?.published_at && <span>{post.published_at}</span>}
-                        {post?.author && <span>{post.author}</span>}
+
+                    <h1 className="max-w-3xl text-2xl font-bold tracking-tight md:text-3xl lg:text-4xl">
+                        {post?.title}
+                    </h1>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-primary-foreground/50">
+                        {post?.published_at && (
+                            <span className="flex items-center gap-1.5">
+                                <Calendar className="h-4 w-4" />
+                                {post.published_at}
+                            </span>
+                        )}
+                        {post?.author && (
+                            <span className="flex items-center gap-1.5">
+                                <User className="h-4 w-4" />
+                                {post.author}
+                            </span>
+                        )}
                     </div>
                 </div>
             </section>
 
-            <Section title="">
+            <Section>
                 <article className="mx-auto max-w-3xl">
                     {post?.categories?.length > 0 && (
                         <div className="mb-6 flex flex-wrap gap-2">
-                            {post.categories.map((cat: any) => (
-                                <Badge key={cat.slug} variant="secondary">
+                            {post.categories.map((cat: PostCategory) => (
+                                <span
+                                    key={cat.slug}
+                                    className="rounded-md bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground"
+                                >
                                     {cat.name}
-                                </Badge>
+                                </span>
                             ))}
                         </div>
                     )}
 
                     {post?.content ? (
                         <div
-                            className="prose prose-lg max-w-none"
+                            className="prose-public"
                             dangerouslySetInnerHTML={{ __html: post.content }}
                         />
                     ) : (
-                        <p className="text-muted-foreground">{t.content_unavailable ?? 'Содержание не доступно.'}</p>
+                        <p className="text-muted-foreground">
+                            {t.content_unavailable ?? 'Содержание не доступно.'}
+                        </p>
                     )}
 
                     {post?.tags?.length > 0 && (
                         <div className="mt-8 flex flex-wrap gap-2 border-t border-border pt-6">
-                            {post.tags.map((tag: any) => (
-                                <Badge key={tag.slug} variant="outline">
+                            {post.tags.map((tag: PostTag) => (
+                                <span
+                                    key={tag.slug}
+                                    className="rounded-md border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
+                                >
                                     #{tag.name}
-                                </Badge>
+                                </span>
                             ))}
                         </div>
                     )}

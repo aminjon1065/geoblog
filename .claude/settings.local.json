@@ -15,7 +15,8 @@
       "mcp__laravel-boost__get-config",
       "mcp__laravel-boost__tinker",
       "mcp__laravel-boost__search-docs",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebFetch(domain:www.psm.com.au)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -1,33 +1,38 @@
 import { Head, usePage } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import Section from '@/components/public/Section';
+import PageHero from '@/components/public/PageHero';
+import type { SharedData, PageData } from '@/types';
+
+interface AboutProps extends SharedData {
+    page: PageData;
+}
 
 export default function About() {
-    const { page, translations } = usePage().props as any;
+    const { page, translations } = usePage<AboutProps>().props;
     const t = translations?.ui ?? {};
 
     return (
         <PublicLayout>
             <Head title={page?.title ?? t.nav_about ?? 'О нас'} />
 
-            <section className="bg-primary py-20 text-primary-foreground">
-                <div className="container">
-                    <h1 className="text-4xl font-bold md:text-5xl">
-                        {page?.title ?? t.nav_about ?? 'О нас'}
-                    </h1>
-                </div>
-            </section>
+            <PageHero
+                title={page?.title ?? t.nav_about ?? 'О нас'}
+                subtitle={t.nav_about ?? 'О нас'}
+            />
 
-            <Section title="">
+            <Section>
                 {page?.content ? (
                     <div
-                        className="prose prose-lg max-w-none"
+                        className="prose-public mx-auto max-w-3xl"
                         dangerouslySetInnerHTML={{ __html: page.content }}
                     />
                 ) : (
-                    <p className="text-lg text-muted-foreground">
-                        {t.no_content_yet ?? 'Информация будет добавлена в ближайшее время.'}
-                    </p>
+                    <div className="mx-auto max-w-3xl text-center">
+                        <p className="text-lg text-muted-foreground">
+                            {t.no_content_yet ?? 'Информация будет добавлена в ближайшее время.'}
+                        </p>
+                    </div>
                 )}
             </Section>
         </PublicLayout>
