@@ -1,7 +1,15 @@
 <?php
 
+use App\Models\Locale;
+
 test('returns a successful response', function () {
-    $response = $this->get(route('home'));
+    Locale::firstOrCreate(['code' => 'ru'], [
+        'name' => 'Русский',
+        'is_active' => true,
+        'sort_order' => 1,
+    ]);
+
+    $response = $this->get(route('home', ['locale' => 'ru']));
 
     $response->assertOk();
 });

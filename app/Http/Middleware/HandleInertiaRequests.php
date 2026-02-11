@@ -41,12 +41,12 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            'locale' => app()->getLocale(),
-            'locales' => \App\Models\Locale::where('is_active', true)->get(),
-            'translations' => [
+            'locale' => fn () => app()->getLocale(),
+            'locales' => \App\Models\Locale::where('is_active', true)->orderBy('sort_order')->get(),
+            'translations' => fn () => [
                 'ui' => trans('ui'),
             ],
-            'sidebarOpen' => !$request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
 }

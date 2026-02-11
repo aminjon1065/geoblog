@@ -1,4 +1,23 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__laravel-boost__database-schema",
+      "Bash(php artisan make:controller:*)",
+      "Bash(php artisan make:request:*)",
+      "mcp__laravel-boost__database-query",
+      "Bash(vendor/bin/pint:*)",
+      "Bash(php artisan make:test:*)",
+      "mcp__laravel-boost__list-routes",
+      "Bash(php artisan test:*)",
+      "Bash(npm run build:*)",
+      "Bash(php artisan wayfinder:generate:*)",
+      "Bash(find:*)",
+      "mcp__laravel-boost__get-config",
+      "mcp__laravel-boost__tinker",
+      "mcp__laravel-boost__search-docs",
+      "Bash(npm install:*)"
+    ]
+  },
   "enabledMcpjsonServers": [
     "laravel-boost",
     "herd"

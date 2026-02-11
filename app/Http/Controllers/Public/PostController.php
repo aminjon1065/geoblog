@@ -26,7 +26,7 @@ class PostController extends Controller
                     'published_at' => $post->published_at?->toDateString(),
                     'title' => $post->translation?->title,
                     'excerpt' => $post->translation?->excerpt,
-                    'categories' => $post->categories->map(fn($cat) => [
+                    'categories' => $post->categories->map(fn ($cat) => [
                         'slug' => $cat->slug,
                         'name' => $cat->translation?->name,
                     ]),
@@ -66,11 +66,11 @@ class PostController extends Controller
                     'description' => $post->translation?->meta_description ?? $post->translation?->excerpt,
                 ],
                 'author' => $post->author?->name,
-                'categories' => $post->categories->map(fn($cat) => [
+                'categories' => $post->categories->map(fn ($cat) => [
                     'slug' => $cat->slug,
                     'name' => $cat->translation?->name,
                 ]),
-                'tags' => $post->tags->map(fn($tag) => [
+                'tags' => $post->tags->map(fn ($tag) => [
                     'slug' => $tag->slug,
                     'name' => $tag->translation?->name,
                 ]),

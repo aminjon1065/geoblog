@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { BookOpen, FileText, FolderOpen, Image, LayoutGrid, Tag, Layers } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -22,17 +22,37 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Посты',
+        href: '/admin/posts',
+        icon: FileText,
+    },
+    {
+        title: 'Категории',
+        href: '/admin/categories',
+        icon: FolderOpen,
+    },
+    {
+        title: 'Теги',
+        href: '/admin/tags',
+        icon: Tag,
+    },
+    {
+        title: 'Страницы',
+        href: '/admin/pages',
+        icon: Layers,
+    },
+    {
+        title: 'Медиа',
+        href: '/admin/media',
+        icon: Image,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        title: 'Сайт',
+        href: '/',
         icon: BookOpen,
     },
 ];

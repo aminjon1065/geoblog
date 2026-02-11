@@ -2,7 +2,8 @@ import { Link, usePage } from '@inertiajs/react';
 import news from '@/routes/news';
 
 export default function NewsCard({ post }: { post: any }) {
-    const { locale } = usePage().props as any;
+    const { locale, translations } = usePage().props as any;
+    const t = translations?.ui ?? {};
 
     return (
         <article className="rounded-xl border p-6 transition hover:shadow-md">
@@ -12,7 +13,7 @@ export default function NewsCard({ post }: { post: any }) {
                 href={news.show({ locale, slug: post.slug })}
                 className="text-primary underline"
             >
-                Читать →
+                {t.read_more ?? 'Читать'} &rarr;
             </Link>
         </article>
     );
