@@ -12,7 +12,10 @@ export default function NewsCard({ post }: NewsCardProps) {
     const t = translations?.ui ?? {};
 
     return (
-        <article className="fade-in-up flex flex-col rounded-xl border border-border bg-card p-5 transition hover:shadow-md">
+        <Link
+            href={news.show({ locale, slug: post.slug })}
+            className="fade-in-up flex flex-col rounded-xl border border-border bg-card p-5 transition hover:shadow-md"
+        >
             {post.published_at && (
                 <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Calendar className="h-3.5 w-3.5" />
@@ -20,7 +23,7 @@ export default function NewsCard({ post }: NewsCardProps) {
                 </div>
             )}
 
-            <h3 className="mb-2 text-base font-semibold leading-snug">
+            <h3 className="mb-2 text-base leading-snug font-semibold">
                 {post.title}
             </h3>
 
@@ -30,13 +33,10 @@ export default function NewsCard({ post }: NewsCardProps) {
                 </p>
             )}
 
-            <Link
-                href={news.show({ locale, slug: post.slug })}
-                className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
-            >
+            <p className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80">
                 {t.read_more ?? 'Читать'}
                 <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-        </article>
+            </p>
+        </Link>
     );
 }
