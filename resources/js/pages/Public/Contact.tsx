@@ -148,6 +148,20 @@ export default function Contact() {
                     </div>
                 </div>
             </Section>
+
+            {/* Map */}
+            <Section>
+                <div className="overflow-hidden rounded-lg border border-border">
+                    <iframe
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=68.74%2C38.54%2C68.80%2C38.58&layer=mapnik&marker=38.5598%2C68.7738"
+                        width="100%"
+                        height="400"
+                        className="border-0"
+                        loading="lazy"
+                        title={t.map_title ?? 'Карта'}
+                    />
+                </div>
+            </Section>
         </PublicLayout>
     );
 }

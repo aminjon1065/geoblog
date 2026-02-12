@@ -84,4 +84,19 @@ class PageController extends Controller
             ] : null,
         ]);
     }
+
+    public function privacy(string $locale): Response
+    {
+        $page = Page::where('key', 'privacy')
+            ->where('is_active', true)
+            ->with('translation')
+            ->first();
+
+        return Inertia::render('Public/Privacy', [
+            'page' => $page ? [
+                'title' => $page->translation?->title,
+                'content' => $page->translation?->content,
+            ] : null,
+        ]);
+    }
 }

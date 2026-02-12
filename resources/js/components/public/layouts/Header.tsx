@@ -27,6 +27,7 @@ export default function Header() {
     const navItems = [
         { label: t.nav_home ?? 'Главная', href: url('', locale) },
         { label: t.nav_about ?? 'О нас', href: url('/about', locale) },
+        { label: t.nav_services ?? 'Услуги', href: url('/services', locale) },
         { label: t.nav_news ?? 'Новости', href: url('/news', locale) },
         { label: t.nav_projects ?? 'Проекты', href: url('/projects', locale) },
         { label: t.nav_gallery ?? 'Галерея', href: url('/gallery', locale) },

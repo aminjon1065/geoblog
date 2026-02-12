@@ -59,7 +59,11 @@ export default function Home() {
 
     return (
         <PublicLayout>
-            <Head title={t.page_title ?? 'Ассоциация Геологов Таджикистана'} />
+            <Head title={t.page_title ?? 'Ассоциация Геологов Таджикистана'}>
+                <meta name="description" content={t.hero_subtitle ?? 'Развитие геологической науки, экспертизы и профессионального сообщества.'} />
+                <meta property="og:title" content={t.page_title ?? 'Ассоциация Геологов Таджикистана'} />
+                <meta property="og:description" content={t.hero_subtitle ?? 'Развитие геологической науки, экспертизы и профессионального сообщества.'} />
+            </Head>
 
             <Hero />
 
