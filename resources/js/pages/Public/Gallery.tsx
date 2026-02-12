@@ -29,11 +29,13 @@ export default function Gallery() {
                         {images.data.map((image) => (
                             <button
                                 key={image.id}
-                                onClick={() => setLightbox(`/${image.path}`)}
+                                onClick={() =>
+                                    setLightbox(`/storage/${image.path}`)
+                                }
                                 className="fade-in-up group relative aspect-square overflow-hidden rounded-lg"
                             >
                                 <img
-                                    src={`/${image.path}`}
+                                    src={`/storage/${image.path}`}
                                     alt={image.path}
                                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
