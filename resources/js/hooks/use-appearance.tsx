@@ -24,12 +24,6 @@ const setCookie = (name: string, value: string, days = 365): void => {
     document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
-const getStoredAppearance = (): Appearance => {
-    if (typeof window === 'undefined') return 'system';
-
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
-};
-
 const isDarkMode = (appearance: Appearance): boolean => {
     return appearance === 'dark' || (appearance === 'system' && prefersDark());
 };
@@ -50,17 +44,6 @@ const subscribe = (callback: () => void) => {
 };
 
 const notify = (): void => listeners.forEach((listener) => listener());
-
-const mediaQuery = (): MediaQueryList | null => {
-    if (typeof window === 'undefined') return null;
-
-    return window.matchMedia('(prefers-color-scheme: dark)');
-};
-
-const handleSystemThemeChange = (): void => {
-    applyTheme(currentAppearance);
-    notify();
-};
 
 export function initializeTheme(): void {
     if (typeof window === 'undefined') return;

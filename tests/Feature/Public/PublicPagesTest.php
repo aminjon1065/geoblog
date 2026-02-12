@@ -11,7 +11,7 @@ beforeEach(function () {
 });
 
 test('root redirects to default locale', function () {
-    $this->get('/')->assertRedirect('/ru');
+    $this->get('/')->assertRedirect('/'.config('app.locale'));
 });
 
 test('home page returns successful response', function () {

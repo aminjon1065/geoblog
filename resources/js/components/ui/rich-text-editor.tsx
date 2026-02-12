@@ -95,7 +95,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
         if (editor && content !== editor.getHTML()) {
             editor.commands.setContent(content, false);
         }
-    }, [content]);
+    }, [content, editor]);
 
     const addLink = useCallback(() => {
         if (!editor) return;

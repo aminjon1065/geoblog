@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 
 function NavLink({
     href,
@@ -7,8 +7,6 @@ function NavLink({
     href: string;
     children: React.ReactNode;
 }) {
-    const active = usePage().url === href;
-
     return (
         <Link href={href} className="group relative transition">
             {children}

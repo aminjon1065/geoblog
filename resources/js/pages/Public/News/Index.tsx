@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import NewsCard from '@/components/public/NewsCard';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
