@@ -8,7 +8,7 @@ export default function PageHero({ title, subtitle }: PageHeroProps) {
         <section className="bg-primary pt-16 text-primary-foreground">
             <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">
                 {subtitle && (
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-accent">
+                    <p className="mb-2 text-xs font-semibold tracking-widest text-accent uppercase">
                         {subtitle}
                     </p>
                 )}

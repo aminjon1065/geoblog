@@ -11,16 +11,18 @@ export default function Hero() {
         <section className="bg-primary pt-16 text-primary-foreground">
             <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
                 <div className="max-w-2xl">
-                    <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent">
-                        {t.hero_tagline ?? 'Геологическое сообщество Таджикистана'}
+                    <p className="mb-3 text-xs font-semibold tracking-widest text-accent uppercase">
+                        {t.hero_tagline ??
+                            'Геологическое сообщество Таджикистана'}
                     </p>
 
-                    <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+                    <h1 className="text-3xl leading-tight font-bold tracking-tight sm:text-4xl md:text-5xl">
                         {t.hero_title ?? 'Ассоциация Геологов Таджикистана'}
                     </h1>
 
                     <p className="mt-5 max-w-lg text-base leading-relaxed text-primary-foreground/60">
-                        {t.hero_subtitle ?? 'Развитие геологической науки, экспертизы и профессионального сообщества.'}
+                        {t.hero_subtitle ??
+                            'Развитие геологической науки, экспертизы и профессионального сообщества.'}
                     </p>
 
                     <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -50,8 +52,12 @@ export default function Hero() {
                         { value: '15+', label: t.stat_partners ?? 'Партнёров' },
                     ].map((stat) => (
                         <div key={stat.label}>
-                            <p className="text-2xl font-bold text-accent md:text-3xl">{stat.value}</p>
-                            <p className="mt-1 text-sm text-primary-foreground/50">{stat.label}</p>
+                            <p className="text-2xl font-bold text-accent md:text-3xl">
+                                {stat.value}
+                            </p>
+                            <p className="mt-1 text-sm text-primary-foreground/50">
+                                {stat.label}
+                            </p>
                         </div>
                     ))}
                 </div>

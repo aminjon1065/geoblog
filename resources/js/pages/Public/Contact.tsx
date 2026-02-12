@@ -1,12 +1,12 @@
 import { Head, usePage, useForm } from '@inertiajs/react';
-import PublicLayout from '@/layouts/public-layout';
-import Section from '@/components/public/Section';
+import { MapPin, Mail, Phone, ArrowRight } from 'lucide-react';
+import InputError from '@/components/input-error';
 import PageHero from '@/components/public/PageHero';
+import Section from '@/components/public/Section';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import InputError from '@/components/input-error';
+import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
-import { MapPin, Mail, Phone, ArrowRight } from 'lucide-react';
 import type { SharedData } from '@/types';
 
 export default function Contact() {
@@ -61,35 +61,45 @@ export default function Contact() {
                             {t.contact_form ?? 'Напишите нам'}
                         </h2>
                         <p className="mb-6 text-sm text-muted-foreground">
-                            {t.contact_form_desc ?? 'Заполните форму и мы свяжемся с вами в ближайшее время.'}
+                            {t.contact_form_desc ??
+                                'Заполните форму и мы свяжемся с вами в ближайшее время.'}
                         </p>
 
                         {flash?.success && (
                             <div className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                                {t.contact_success ?? 'Ваше сообщение отправлено!'}
+                                {t.contact_success ??
+                                    'Ваше сообщение отправлено!'}
                             </div>
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="name">{t.name ?? 'Имя'}</Label>
+                                    <Label htmlFor="name">
+                                        {t.name ?? 'Имя'}
+                                    </Label>
                                     <Input
                                         id="name"
                                         value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('name', e.target.value)
+                                        }
                                         required
                                     />
                                     <InputError message={errors.name} />
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="email">{t.email ?? 'Email'}</Label>
+                                    <Label htmlFor="email">
+                                        {t.email ?? 'Email'}
+                                    </Label>
                                     <Input
                                         id="email"
                                         type="email"
                                         value={data.email}
-                                        onChange={(e) => setData('email', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('email', e.target.value)
+                                        }
                                         required
                                     />
                                     <InputError message={errors.email} />
@@ -97,14 +107,18 @@ export default function Contact() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="message">{t.message ?? 'Сообщение'}</Label>
+                                <Label htmlFor="message">
+                                    {t.message ?? 'Сообщение'}
+                                </Label>
                                 <textarea
                                     id="message"
                                     rows={5}
                                     value={data.message}
-                                    onChange={(e) => setData('message', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('message', e.target.value)
+                                    }
                                     required
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                 />
                                 <InputError message={errors.message} />
                             </div>
@@ -129,12 +143,15 @@ export default function Contact() {
 
                             <div className="space-y-5">
                                 {contactItems.map((item) => (
-                                    <div key={item.label} className="flex gap-3">
+                                    <div
+                                        key={item.label}
+                                        className="flex gap-3"
+                                    >
                                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                                             <item.icon className="h-4 w-4 text-primary" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                            <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                                                 {item.label}
                                             </p>
                                             <p className="mt-0.5 text-sm text-foreground">

@@ -1,8 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, X } from 'lucide-react';
 import { useState } from 'react';
-import PublicLayout from '@/layouts/public-layout';
 import Section from '@/components/public/Section';
+import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import type { SharedData } from '@/types';
 
@@ -37,11 +37,19 @@ export default function ServiceShow() {
         <PublicLayout>
             <Head title={service?.meta?.title ?? service?.title ?? 'Услуга'}>
                 {service?.meta?.description && (
-                    <meta name="description" content={service.meta.description} />
+                    <meta
+                        name="description"
+                        content={service.meta.description}
+                    />
                 )}
-                {service?.title && <meta property="og:title" content={service.title} />}
+                {service?.title && (
+                    <meta property="og:title" content={service.title} />
+                )}
                 {service?.meta?.description && (
-                    <meta property="og:description" content={service.meta.description} />
+                    <meta
+                        property="og:description"
+                        content={service.meta.description}
+                    />
                 )}
             </Head>
 
@@ -72,7 +80,9 @@ export default function ServiceShow() {
                     {service?.content ? (
                         <div
                             className="prose-public"
-                            dangerouslySetInnerHTML={{ __html: service.content }}
+                            dangerouslySetInnerHTML={{
+                                __html: service.content,
+                            }}
                         />
                     ) : (
                         <p className="text-muted-foreground">
@@ -82,12 +92,16 @@ export default function ServiceShow() {
 
                     {service?.images?.length > 0 && (
                         <div className="mt-10 border-t border-border pt-8">
-                            <h2 className="mb-4 text-lg font-semibold">{t.gallery ?? 'Галерея'}</h2>
+                            <h2 className="mb-4 text-lg font-semibold">
+                                {t.gallery ?? 'Галерея'}
+                            </h2>
                             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                                 {service.images.map((image) => (
                                     <button
                                         key={image.id}
-                                        onClick={() => setLightbox(`/${image.path}`)}
+                                        onClick={() =>
+                                            setLightbox(`/${image.path}`)
+                                        }
                                         className="group relative aspect-square overflow-hidden rounded-lg"
                                     >
                                         <img

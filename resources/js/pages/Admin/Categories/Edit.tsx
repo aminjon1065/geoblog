@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Locale {
@@ -47,7 +47,9 @@ export default function CategoriesEdit({ category, locales }: Props) {
 
     const initialTranslations: Record<string, TranslationData> = {};
     for (const locale of locales) {
-        initialTranslations[locale.code] = category.translations[locale.code] ?? {
+        initialTranslations[locale.code] = category.translations[
+            locale.code
+        ] ?? {
             name: '',
             description: '',
         };
@@ -64,7 +66,11 @@ export default function CategoriesEdit({ category, locales }: Props) {
         put(`/admin/categories/${category.id}`);
     }
 
-    function updateTranslation(locale: string, field: keyof TranslationData, value: string) {
+    function updateTranslation(
+        locale: string,
+        field: keyof TranslationData,
+        value: string,
+    ) {
         setData('translations', {
             ...data.translations,
             [locale]: {
@@ -78,7 +84,10 @@ export default function CategoriesEdit({ category, locales }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Category" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading title="Edit Category" description={`Editing: ${category.slug}`} />
+                <Heading
+                    title="Edit Category"
+                    description={`Editing: ${category.slug}`}
+                />
 
                 <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -87,7 +96,9 @@ export default function CategoriesEdit({ category, locales }: Props) {
                             <Input
                                 id="slug"
                                 value={data.slug}
-                                onChange={(e) => setData('slug', e.target.value)}
+                                onChange={(e) =>
+                                    setData('slug', e.target.value)
+                                }
                             />
                             <InputError message={errors.slug} />
                         </div>
@@ -98,7 +109,12 @@ export default function CategoriesEdit({ category, locales }: Props) {
                                 id="sort_order"
                                 type="number"
                                 value={data.sort_order}
-                                onChange={(e) => setData('sort_order', parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                    setData(
+                                        'sort_order',
+                                        parseInt(e.target.value) || 0,
+                                    )
+                                }
                             />
                             <InputError message={errors.sort_order} />
                         </div>
@@ -127,35 +143,67 @@ export default function CategoriesEdit({ category, locales }: Props) {
                         {locales.map((locale) => (
                             <div
                                 key={locale.code}
-                                className={activeLocale === locale.code ? 'space-y-4' : 'hidden'}
+                                className={
+                                    activeLocale === locale.code
+                                        ? 'space-y-4'
+                                        : 'hidden'
+                                }
                             >
                                 <div className="space-y-2">
-                                    <Label htmlFor={`name-${locale.code}`}>Name</Label>
+                                    <Label htmlFor={`name-${locale.code}`}>
+                                        Name
+                                    </Label>
                                     <Input
                                         id={`name-${locale.code}`}
-                                        value={data.translations[locale.code]?.name ?? ''}
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.name ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, 'name', e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                'name',
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.name` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.name` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor={`description-${locale.code}`}>Description</Label>
+                                    <Label
+                                        htmlFor={`description-${locale.code}`}
+                                    >
+                                        Description
+                                    </Label>
                                     <textarea
                                         id={`description-${locale.code}`}
                                         rows={4}
-                                        className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                                        value={data.translations[locale.code]?.description ?? ''}
+                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.description ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, 'description', e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                'description',
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.description` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.description` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
                             </div>

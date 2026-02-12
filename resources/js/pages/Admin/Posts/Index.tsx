@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Post {
@@ -59,7 +59,10 @@ export default function PostsIndex({ posts }: Props) {
             <Head title="Posts" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <Heading title="Posts" description="Manage your blog posts" />
+                    <Heading
+                        title="Posts"
+                        description="Manage your blog posts"
+                    />
                     <Button asChild>
                         <Link href="/admin/posts/create">New Post</Link>
                     </Button>
@@ -69,16 +72,29 @@ export default function PostsIndex({ posts }: Props) {
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium">Title</th>
-                                <th className="px-4 py-3 text-left font-medium">Status</th>
-                                <th className="px-4 py-3 text-left font-medium">Author</th>
-                                <th className="px-4 py-3 text-left font-medium">Date</th>
-                                <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Title
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Status
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Author
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Date
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {posts.data.map((post) => (
-                                <tr key={post.id} className="border-b last:border-0">
+                                <tr
+                                    key={post.id}
+                                    className="border-b last:border-0"
+                                >
                                     <td className="px-4 py-3">
                                         <Link
                                             href={`/admin/posts/${post.id}/edit`}
@@ -88,7 +104,9 @@ export default function PostsIndex({ posts }: Props) {
                                         </Link>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Badge variant={statusVariant(post.status)}>
+                                        <Badge
+                                            variant={statusVariant(post.status)}
+                                        >
                                             {post.status}
                                         </Badge>
                                     </td>
@@ -97,20 +115,30 @@ export default function PostsIndex({ posts }: Props) {
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {post.published_at
-                                            ? new Date(post.published_at).toLocaleDateString()
+                                            ? new Date(
+                                                  post.published_at,
+                                              ).toLocaleDateString()
                                             : '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/admin/posts/${post.id}/edit`}>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={`/admin/posts/${post.id}/edit`}
+                                                >
                                                     Edit
                                                 </Link>
                                             </Button>
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
-                                                onClick={() => handleDelete(post.id)}
+                                                onClick={() =>
+                                                    handleDelete(post.id)
+                                                }
                                             >
                                                 Delete
                                             </Button>
@@ -120,7 +148,10 @@ export default function PostsIndex({ posts }: Props) {
                             ))}
                             {posts.data.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                                    <td
+                                        colSpan={5}
+                                        className="px-4 py-8 text-center text-muted-foreground"
+                                    >
                                         No posts found.
                                     </td>
                                 </tr>
@@ -132,12 +163,15 @@ export default function PostsIndex({ posts }: Props) {
                 {posts.last_page > 1 && (
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            Page {posts.current_page} of {posts.last_page} ({posts.total} total)
+                            Page {posts.current_page} of {posts.last_page} (
+                            {posts.total} total)
                         </p>
                         <div className="flex gap-2">
                             {posts.prev_page_url && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={posts.prev_page_url}>Previous</Link>
+                                    <Link href={posts.prev_page_url}>
+                                        Previous
+                                    </Link>
                                 </Button>
                             )}
                             {posts.next_page_url && (

@@ -1,10 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import InputError from '@/components/input-error';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem, LocaleData } from '@/types';
 
 interface ServiceTranslation {
@@ -39,7 +39,9 @@ export default function ServicesEdit({ service, locales }: Props) {
 
     const translationsMap = Object.fromEntries(
         locales.map((l) => {
-            const existing = service.translations.find((t) => t.locale === l.code);
+            const existing = service.translations.find(
+                (t) => t.locale === l.code,
+            );
             return [
                 l.code,
                 {
@@ -69,7 +71,10 @@ export default function ServicesEdit({ service, locales }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Service" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading title="Edit Service" description="Update service details" />
+                <Heading
+                    title="Edit Service"
+                    description="Update service details"
+                />
 
                 <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
                     <div className="space-y-2">
@@ -89,7 +94,12 @@ export default function ServicesEdit({ service, locales }: Props) {
                                 id="sort_order"
                                 type="number"
                                 value={data.sort_order}
-                                onChange={(e) => setData('sort_order', parseInt(e.target.value) || 0)}
+                                onChange={(e) =>
+                                    setData(
+                                        'sort_order',
+                                        parseInt(e.target.value) || 0,
+                                    )
+                                }
                                 className="w-24"
                             />
                         </div>
@@ -98,7 +108,9 @@ export default function ServicesEdit({ service, locales }: Props) {
                                 id="is_active"
                                 type="checkbox"
                                 checked={data.is_active}
-                                onChange={(e) => setData('is_active', e.target.checked)}
+                                onChange={(e) =>
+                                    setData('is_active', e.target.checked)
+                                }
                                 className="rounded border-input"
                             />
                             <Label htmlFor="is_active">Active</Label>
@@ -106,32 +118,59 @@ export default function ServicesEdit({ service, locales }: Props) {
                     </div>
 
                     {locales.map((locale) => (
-                        <fieldset key={locale.code} className="space-y-4 rounded-lg border p-4">
-                            <legend className="px-2 text-sm font-semibold uppercase">{locale.code}</legend>
+                        <fieldset
+                            key={locale.code}
+                            className="space-y-4 rounded-lg border p-4"
+                        >
+                            <legend className="px-2 text-sm font-semibold uppercase">
+                                {locale.code}
+                            </legend>
 
                             <div className="space-y-2">
                                 <Label>Title</Label>
                                 <Input
-                                    value={data.translations[locale.code]?.title ?? ''}
+                                    value={
+                                        data.translations[locale.code]?.title ??
+                                        ''
+                                    }
                                     onChange={(e) =>
                                         setData('translations', {
                                             ...data.translations,
-                                            [locale.code]: { ...data.translations[locale.code], title: e.target.value },
+                                            [locale.code]: {
+                                                ...data.translations[
+                                                    locale.code
+                                                ],
+                                                title: e.target.value,
+                                            },
                                         })
                                     }
                                 />
-                                <InputError message={errors[`translations.${locale.code}.title`]} />
+                                <InputError
+                                    message={
+                                        errors[
+                                            `translations.${locale.code}.title`
+                                        ]
+                                    }
+                                />
                             </div>
 
                             <div className="space-y-2">
                                 <Label>Description</Label>
                                 <textarea
                                     rows={3}
-                                    value={data.translations[locale.code]?.description ?? ''}
+                                    value={
+                                        data.translations[locale.code]
+                                            ?.description ?? ''
+                                    }
                                     onChange={(e) =>
                                         setData('translations', {
                                             ...data.translations,
-                                            [locale.code]: { ...data.translations[locale.code], description: e.target.value },
+                                            [locale.code]: {
+                                                ...data.translations[
+                                                    locale.code
+                                                ],
+                                                description: e.target.value,
+                                            },
                                         })
                                     }
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -142,11 +181,19 @@ export default function ServicesEdit({ service, locales }: Props) {
                                 <Label>Content</Label>
                                 <textarea
                                     rows={6}
-                                    value={data.translations[locale.code]?.content ?? ''}
+                                    value={
+                                        data.translations[locale.code]
+                                            ?.content ?? ''
+                                    }
                                     onChange={(e) =>
                                         setData('translations', {
                                             ...data.translations,
-                                            [locale.code]: { ...data.translations[locale.code], content: e.target.value },
+                                            [locale.code]: {
+                                                ...data.translations[
+                                                    locale.code
+                                                ],
+                                                content: e.target.value,
+                                            },
                                         })
                                     }
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"

@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface TagTranslation {
@@ -46,14 +46,23 @@ export default function TagsIndex({ tags }: Props) {
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium">Name</th>
-                                <th className="px-4 py-3 text-left font-medium">Slug</th>
-                                <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Name
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Slug
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {tags.map((tag) => (
-                                <tr key={tag.id} className="border-b last:border-0">
+                                <tr
+                                    key={tag.id}
+                                    className="border-b last:border-0"
+                                >
                                     <td className="px-4 py-3 font-medium">
                                         {tag.translations[0]?.name ?? '—'}
                                     </td>
@@ -62,15 +71,23 @@ export default function TagsIndex({ tags }: Props) {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/admin/tags/${tag.id}/edit`}>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={`/admin/tags/${tag.id}/edit`}
+                                                >
                                                     Edit
                                                 </Link>
                                             </Button>
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
-                                                onClick={() => handleDelete(tag.id)}
+                                                onClick={() =>
+                                                    handleDelete(tag.id)
+                                                }
                                             >
                                                 Delete
                                             </Button>
@@ -80,7 +97,10 @@ export default function TagsIndex({ tags }: Props) {
                             ))}
                             {tags.length === 0 && (
                                 <tr>
-                                    <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                                    <td
+                                        colSpan={3}
+                                        className="px-4 py-8 text-center text-muted-foreground"
+                                    >
                                         No tags found.
                                     </td>
                                 </tr>

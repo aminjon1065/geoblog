@@ -11,10 +11,12 @@ export default function CTA() {
         <section className="border-t border-border bg-secondary py-16 md:py-20">
             <div className="mx-auto max-w-7xl px-6 text-center">
                 <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-                    {t.cta_title ?? 'Присоединяйтесь к профессиональному сообществу'}
+                    {t.cta_title ??
+                        'Присоединяйтесь к профессиональному сообществу'}
                 </h2>
                 <p className="mx-auto mt-3 max-w-lg text-base text-muted-foreground">
-                    {t.cta_subtitle ?? 'Станьте частью Ассоциации Геологов Таджикистана'}
+                    {t.cta_subtitle ??
+                        'Станьте частью Ассоциации Геологов Таджикистана'}
                 </p>
                 <Link
                     href={url('/contact', locale)}

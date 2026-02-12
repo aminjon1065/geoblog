@@ -23,16 +23,16 @@ class SitemapController extends Controller
         foreach ($locales as $locale) {
             foreach ($staticPages as $page) {
                 $xml .= '<url>';
-                $xml .= '<loc>' . url("/{$locale}{$page}") . '</loc>';
+                $xml .= '<loc>'.url("/{$locale}{$page}").'</loc>';
                 $xml .= '<changefreq>weekly</changefreq>';
-                $xml .= '<priority>' . ($page === '' ? '1.0' : '0.8') . '</priority>';
+                $xml .= '<priority>'.($page === '' ? '1.0' : '0.8').'</priority>';
                 $xml .= '</url>';
             }
 
             foreach ($posts as $post) {
                 $xml .= '<url>';
-                $xml .= '<loc>' . url("/{$locale}/news/{$post->slug}") . '</loc>';
-                $xml .= '<lastmod>' . $post->updated_at->toAtomString() . '</lastmod>';
+                $xml .= '<loc>'.url("/{$locale}/news/{$post->slug}").'</loc>';
+                $xml .= '<lastmod>'.$post->updated_at->toAtomString().'</lastmod>';
                 $xml .= '<changefreq>monthly</changefreq>';
                 $xml .= '<priority>0.6</priority>';
                 $xml .= '</url>';
@@ -40,8 +40,8 @@ class SitemapController extends Controller
 
             foreach ($services as $service) {
                 $xml .= '<url>';
-                $xml .= '<loc>' . url("/{$locale}/services/{$service->slug}") . '</loc>';
-                $xml .= '<lastmod>' . $service->updated_at->toAtomString() . '</lastmod>';
+                $xml .= '<loc>'.url("/{$locale}/services/{$service->slug}").'</loc>';
+                $xml .= '<lastmod>'.$service->updated_at->toAtomString().'</lastmod>';
                 $xml .= '<changefreq>monthly</changefreq>';
                 $xml .= '<priority>0.7</priority>';
                 $xml .= '</url>';

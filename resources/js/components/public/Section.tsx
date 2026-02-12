@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 import { useScrollAnimation } from '@/hooks/use-scroll-animation';
+import { cn } from '@/lib/utils';
 
 interface SectionProps {
     title?: string;
@@ -9,19 +9,21 @@ interface SectionProps {
     className?: string;
 }
 
-export default function Section({ title, subtitle, children, className }: SectionProps) {
+export default function Section({
+    title,
+    subtitle,
+    children,
+    className,
+}: SectionProps) {
     const ref = useScrollAnimation();
 
     return (
-        <section
-            ref={ref}
-            className={cn('py-16 md:py-20', className)}
-        >
+        <section ref={ref} className={cn('py-16 md:py-20', className)}>
             <div className="mx-auto max-w-7xl px-6">
                 {title && (
                     <div className="fade-in-up mb-10">
                         {subtitle && (
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-accent">
+                            <p className="mb-2 text-xs font-semibold tracking-widest text-accent uppercase">
                                 {subtitle}
                             </p>
                         )}

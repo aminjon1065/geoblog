@@ -1,11 +1,17 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import PublicLayout from '@/layouts/public-layout';
-import Section from '@/components/public/Section';
-import PageHero from '@/components/public/PageHero';
 import NewsCard from '@/components/public/NewsCard';
-import { cn } from '@/lib/utils';
+import PageHero from '@/components/public/PageHero';
+import Section from '@/components/public/Section';
+import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
-import type { SharedData, PostListItem, PostTag, PostCategory, PaginatedData } from '@/types';
+import { cn } from '@/lib/utils';
+import type {
+    SharedData,
+    PostListItem,
+    PostTag,
+    PostCategory,
+    PaginatedData,
+} from '@/types';
 
 interface NewsIndexProps extends SharedData {
     posts: PaginatedData<PostListItem>;
@@ -18,7 +24,8 @@ interface NewsIndexProps extends SharedData {
 }
 
 export default function Index() {
-    const { posts, tags, categories, filters, locale, translations } = usePage<NewsIndexProps>().props;
+    const { posts, tags, categories, filters, locale, translations } =
+        usePage<NewsIndexProps>().props;
     const t = translations?.ui ?? {};
 
     function filterUrl(params: Record<string, string | null>): string {
@@ -51,7 +58,7 @@ export default function Index() {
                     <div className="mb-8 space-y-4">
                         {categories?.length > 0 && (
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                                     {t.categories ?? 'Категории'}:
                                 </span>
                                 <Link
@@ -68,7 +75,12 @@ export default function Index() {
                                 {categories.map((cat) => (
                                     <Link
                                         key={cat.slug}
-                                        href={filterUrl({ category: filters?.category === cat.slug ? null : cat.slug })}
+                                        href={filterUrl({
+                                            category:
+                                                filters?.category === cat.slug
+                                                    ? null
+                                                    : cat.slug,
+                                        })}
                                         className={cn(
                                             'rounded-md px-3 py-1 text-xs font-medium transition',
                                             filters?.category === cat.slug
@@ -84,13 +96,18 @@ export default function Index() {
 
                         {tags?.length > 0 && (
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                                     {t.tags ?? 'Теги'}:
                                 </span>
                                 {tags.map((tag) => (
                                     <Link
                                         key={tag.slug}
-                                        href={filterUrl({ tag: filters?.tag === tag.slug ? null : tag.slug })}
+                                        href={filterUrl({
+                                            tag:
+                                                filters?.tag === tag.slug
+                                                    ? null
+                                                    : tag.slug,
+                                        })}
                                         className={cn(
                                             'rounded-md border px-2.5 py-0.5 text-xs transition',
                                             filters?.tag === tag.slug
@@ -125,9 +142,12 @@ export default function Index() {
                                             link.active
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'text-muted-foreground hover:bg-muted',
-                                            !link.url && 'pointer-events-none opacity-40',
+                                            !link.url &&
+                                                'pointer-events-none opacity-40',
                                         )}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
                                     />
                                 ))}
                             </nav>

@@ -1,7 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
-import PublicLayout from '@/layouts/public-layout';
-import Section from '@/components/public/Section';
 import PageHero from '@/components/public/PageHero';
+import Section from '@/components/public/Section';
+import PublicLayout from '@/layouts/public-layout';
 import type { SharedData, PageData } from '@/types';
 
 interface MembersProps extends SharedData {
@@ -30,7 +30,8 @@ export default function Members() {
                 ) : (
                     <div className="mx-auto max-w-3xl text-center">
                         <p className="text-lg text-muted-foreground">
-                            {t.no_members_yet ?? 'Информация о членах ассоциации будет добавлена в ближайшее время.'}
+                            {t.no_members_yet ??
+                                'Информация о членах ассоциации будет добавлена в ближайшее время.'}
                         </p>
                     </div>
                 )}

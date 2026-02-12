@@ -43,9 +43,21 @@ export default function Footer() {
     ];
 
     const socialLinks = [
-        { icon: FacebookIcon, href: 'https://facebook.com/geologist.tj', label: 'Facebook' },
-        { icon: InstagramIcon, href: 'https://instagram.com/geologist.tj', label: 'Instagram' },
-        { icon: TelegramIcon, href: 'https://t.me/geologist_tj', label: 'Telegram' },
+        {
+            icon: FacebookIcon,
+            href: 'https://facebook.com/geologist.tj',
+            label: 'Facebook',
+        },
+        {
+            icon: InstagramIcon,
+            href: 'https://instagram.com/geologist.tj',
+            label: 'Instagram',
+        },
+        {
+            icon: TelegramIcon,
+            href: 'https://t.me/geologist_tj',
+            label: 'Telegram',
+        },
     ];
 
     return (
@@ -142,7 +154,8 @@ export default function Footer() {
                                 href={url('/privacy', locale)}
                                 className="text-foreground/70 transition-colors hover:text-primary"
                             >
-                                {t.privacy_policy ?? 'Политика конфиденциальности'}
+                                {t.privacy_policy ??
+                                    'Политика конфиденциальности'}
                             </Link>
                         </nav>
                     </div>

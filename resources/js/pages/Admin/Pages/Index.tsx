@@ -1,8 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface PageTranslation {
@@ -37,29 +37,54 @@ export default function PagesIndex({ pages }: Props) {
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium">Key</th>
-                                <th className="px-4 py-3 text-left font-medium">Title</th>
-                                <th className="px-4 py-3 text-left font-medium">Active</th>
-                                <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Key
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Title
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Active
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {pages.map((page) => (
-                                <tr key={page.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3 font-medium font-mono text-xs">
+                                <tr
+                                    key={page.id}
+                                    className="border-b last:border-0"
+                                >
+                                    <td className="px-4 py-3 font-mono text-xs font-medium">
                                         {page.key}
                                     </td>
                                     <td className="px-4 py-3">
                                         {page.translations[0]?.title ?? '—'}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Badge variant={page.is_active ? 'default' : 'secondary'}>
-                                            {page.is_active ? 'Active' : 'Inactive'}
+                                        <Badge
+                                            variant={
+                                                page.is_active
+                                                    ? 'default'
+                                                    : 'secondary'
+                                            }
+                                        >
+                                            {page.is_active
+                                                ? 'Active'
+                                                : 'Inactive'}
                                         </Badge>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/admin/pages/${page.id}/edit`}>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={`/admin/pages/${page.id}/edit`}
+                                            >
                                                 Edit
                                             </Link>
                                         </Button>
@@ -68,7 +93,10 @@ export default function PagesIndex({ pages }: Props) {
                             ))}
                             {pages.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                                    <td
+                                        colSpan={4}
+                                        className="px-4 py-8 text-center text-muted-foreground"
+                                    >
                                         No pages found.
                                     </td>
                                 </tr>

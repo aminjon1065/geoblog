@@ -1,6 +1,6 @@
-import Header from '@/components/public/layouts/Header';
-import Footer from '@/components/public/layouts/Footer';
 import type { ReactNode } from 'react';
+import Footer from '@/components/public/layouts/Footer';
+import Header from '@/components/public/layouts/Header';
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
     return (

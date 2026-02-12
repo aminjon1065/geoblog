@@ -1,8 +1,8 @@
-import { useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { useRef } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface MediaItem {
@@ -81,7 +81,10 @@ export default function MediaIndex({ media }: Props) {
             <Head title="Media" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <Heading title="Media" description="Manage uploaded files" />
+                    <Heading
+                        title="Media"
+                        description="Manage uploaded files"
+                    />
                 </div>
 
                 {/* Upload */}
@@ -115,8 +118,9 @@ export default function MediaIndex({ media }: Props) {
                                     </div>
                                 ) : (
                                     <div className="flex aspect-square items-center justify-center bg-muted">
-                                        <span className="text-xs font-medium uppercase text-muted-foreground">
-                                            {item.mime_type.split('/')[1] ?? 'file'}
+                                        <span className="text-xs font-medium text-muted-foreground uppercase">
+                                            {item.mime_type.split('/')[1] ??
+                                                'file'}
                                         </span>
                                     </div>
                                 )}
@@ -126,7 +130,9 @@ export default function MediaIndex({ media }: Props) {
                                         {formatFileSize(item.size)}
                                     </p>
                                     <p className="truncate text-xs text-muted-foreground">
-                                        {new Date(item.created_at).toLocaleDateString()}
+                                        {new Date(
+                                            item.created_at,
+                                        ).toLocaleDateString()}
                                     </p>
                                 </div>
 
@@ -152,14 +158,17 @@ export default function MediaIndex({ media }: Props) {
                 {media.last_page > 1 && (
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            Page {media.current_page} of {media.last_page} ({media.total} total)
+                            Page {media.current_page} of {media.last_page} (
+                            {media.total} total)
                         </p>
                         <div className="flex gap-2">
                             {media.prev_page_url && (
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => router.get(media.prev_page_url!)}
+                                    onClick={() =>
+                                        router.get(media.prev_page_url!)
+                                    }
                                 >
                                     Previous
                                 </Button>
@@ -168,7 +177,9 @@ export default function MediaIndex({ media }: Props) {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => router.get(media.next_page_url!)}
+                                    onClick={() =>
+                                        router.get(media.next_page_url!)
+                                    }
                                 >
                                     Next
                                 </Button>

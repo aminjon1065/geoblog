@@ -1,8 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import PublicLayout from '@/layouts/public-layout';
-import Section from '@/components/public/Section';
-import { url } from '@/lib/url';
 import { ArrowLeft, Calendar, User } from 'lucide-react';
+import Section from '@/components/public/Section';
+import PublicLayout from '@/layouts/public-layout';
+import { url } from '@/lib/url';
 import type { SharedData, PostDetail, PostCategory, PostTag } from '@/types';
 
 interface NewsShowProps extends SharedData {
@@ -19,9 +19,14 @@ export default function Show() {
                 {post?.meta?.description && (
                     <meta name="description" content={post.meta.description} />
                 )}
-                {post?.title && <meta property="og:title" content={post.title} />}
+                {post?.title && (
+                    <meta property="og:title" content={post.title} />
+                )}
                 {post?.meta?.description && (
-                    <meta property="og:description" content={post.meta.description} />
+                    <meta
+                        property="og:description"
+                        content={post.meta.description}
+                    />
                 )}
                 <meta property="og:type" content="article" />
             </Head>

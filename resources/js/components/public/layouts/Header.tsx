@@ -1,10 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import logo from '@/assets/logo.webp';
 import { url } from '@/lib/url';
 import { cn } from '@/lib/utils';
 import type { SharedData, LocaleData } from '@/types';
-import logo from '@/assets/logo.webp';
 
 export default function Header() {
     const { locale, locales, translations } = usePage<SharedData>().props;
@@ -68,7 +68,9 @@ export default function Header() {
                     <span
                         className={cn(
                             'hidden text-sm leading-tight font-semibold lg:block',
-                            scrolled ? 'text-foreground' : 'text-primary-foreground',
+                            scrolled
+                                ? 'text-foreground'
+                                : 'text-primary-foreground',
                         )}
                     >
                         {t.org_short_name ?? 'Ассоциация Геологов'}
@@ -87,8 +89,8 @@ export default function Header() {
                                         ? 'bg-primary/10 text-primary'
                                         : 'bg-primary-foreground/15 text-primary-foreground'
                                     : scrolled
-                                        ? 'text-muted-foreground hover:text-foreground'
-                                        : 'text-primary-foreground/70 hover:text-primary-foreground',
+                                      ? 'text-muted-foreground hover:text-foreground'
+                                      : 'text-primary-foreground/70 hover:text-primary-foreground',
                             )}
                         >
                             {item.label}
@@ -109,8 +111,8 @@ export default function Header() {
                                             ? 'bg-primary font-semibold text-primary-foreground'
                                             : 'bg-primary-foreground/15 font-semibold text-primary-foreground'
                                         : scrolled
-                                            ? 'text-muted-foreground hover:text-foreground'
-                                            : 'text-primary-foreground/60 hover:text-primary-foreground',
+                                          ? 'text-muted-foreground hover:text-foreground'
+                                          : 'text-primary-foreground/60 hover:text-primary-foreground',
                                 )}
                             >
                                 {l.code}
@@ -153,9 +155,7 @@ export default function Header() {
             <div
                 className={cn(
                     'overflow-hidden bg-background transition-all duration-300 lg:hidden',
-                    open
-                        ? 'max-h-screen border-t border-border'
-                        : 'max-h-0',
+                    open ? 'max-h-screen border-t border-border' : 'max-h-0',
                 )}
             >
                 <div className="space-y-1 px-6 py-4">

@@ -1,7 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
-import PublicLayout from '@/layouts/public-layout';
-import Section from '@/components/public/Section';
 import PageHero from '@/components/public/PageHero';
+import Section from '@/components/public/Section';
+import PublicLayout from '@/layouts/public-layout';
 import type { SharedData, PageData } from '@/types';
 
 interface PrivacyProps extends SharedData {
@@ -14,12 +14,28 @@ export default function Privacy() {
 
     return (
         <PublicLayout>
-            <Head title={page?.title ?? t.privacy_policy ?? 'Политика конфиденциальности'}>
-                <meta name="description" content={t.privacy_description ?? 'Политика обработки персональных данных'} />
+            <Head
+                title={
+                    page?.title ??
+                    t.privacy_policy ??
+                    'Политика конфиденциальности'
+                }
+            >
+                <meta
+                    name="description"
+                    content={
+                        t.privacy_description ??
+                        'Политика обработки персональных данных'
+                    }
+                />
             </Head>
 
             <PageHero
-                title={page?.title ?? t.privacy_policy ?? 'Политика конфиденциальности'}
+                title={
+                    page?.title ??
+                    t.privacy_policy ??
+                    'Политика конфиденциальности'
+                }
                 subtitle={t.privacy_policy ?? 'Политика конфиденциальности'}
             />
 
@@ -32,7 +48,8 @@ export default function Privacy() {
                 ) : (
                     <div className="mx-auto max-w-3xl text-center">
                         <p className="text-lg text-muted-foreground">
-                            {t.no_privacy_yet ?? 'Политика конфиденциальности будет добавлена в ближайшее время.'}
+                            {t.no_privacy_yet ??
+                                'Политика конфиденциальности будет добавлена в ближайшее время.'}
                         </p>
                     </div>
                 )}

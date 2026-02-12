@@ -1,12 +1,12 @@
-import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Locale {
@@ -67,7 +67,11 @@ export default function PagesEdit({ page, locales }: Props) {
         put(`/admin/pages/${page.id}`);
     }
 
-    function updateTranslation(locale: string, field: keyof TranslationData, value: string) {
+    function updateTranslation(
+        locale: string,
+        field: keyof TranslationData,
+        value: string,
+    ) {
         setData('translations', {
             ...data.translations,
             [locale]: {
@@ -81,7 +85,10 @@ export default function PagesEdit({ page, locales }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Page" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading title="Edit Page" description={`Editing page: ${page.key}`} />
+                <Heading
+                    title="Edit Page"
+                    description={`Editing page: ${page.key}`}
+                />
 
                 <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
                     <div className="flex items-center gap-2">
@@ -119,66 +126,124 @@ export default function PagesEdit({ page, locales }: Props) {
                         {locales.map((locale) => (
                             <div
                                 key={locale.code}
-                                className={activeLocale === locale.code ? 'space-y-4' : 'hidden'}
+                                className={
+                                    activeLocale === locale.code
+                                        ? 'space-y-4'
+                                        : 'hidden'
+                                }
                             >
                                 <div className="space-y-2">
-                                    <Label htmlFor={`title-${locale.code}`}>Title</Label>
+                                    <Label htmlFor={`title-${locale.code}`}>
+                                        Title
+                                    </Label>
                                     <Input
                                         id={`title-${locale.code}`}
-                                        value={data.translations[locale.code]?.title ?? ''}
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.title ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, 'title', e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                'title',
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.title` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.title` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor={`content-${locale.code}`}>Content</Label>
+                                    <Label htmlFor={`content-${locale.code}`}>
+                                        Content
+                                    </Label>
                                     <textarea
                                         id={`content-${locale.code}`}
                                         rows={12}
-                                        className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                                        value={data.translations[locale.code]?.content ?? ''}
+                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.content ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, 'content', e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                'content',
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.content` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.content` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
 
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor={`meta_title-${locale.code}`}>Meta Title</Label>
+                                        <Label
+                                            htmlFor={`meta_title-${locale.code}`}
+                                        >
+                                            Meta Title
+                                        </Label>
                                         <Input
                                             id={`meta_title-${locale.code}`}
-                                            value={data.translations[locale.code]?.meta_title ?? ''}
+                                            value={
+                                                data.translations[locale.code]
+                                                    ?.meta_title ?? ''
+                                            }
                                             onChange={(e) =>
-                                                updateTranslation(locale.code, 'meta_title', e.target.value)
+                                                updateTranslation(
+                                                    locale.code,
+                                                    'meta_title',
+                                                    e.target.value,
+                                                )
                                             }
                                         />
                                         <InputError
-                                            message={errors[`translations.${locale.code}.meta_title` as keyof typeof errors]}
+                                            message={
+                                                errors[
+                                                    `translations.${locale.code}.meta_title` as keyof typeof errors
+                                                ]
+                                            }
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor={`meta_description-${locale.code}`}>
+                                        <Label
+                                            htmlFor={`meta_description-${locale.code}`}
+                                        >
                                             Meta Description
                                         </Label>
                                         <Input
                                             id={`meta_description-${locale.code}`}
-                                            value={data.translations[locale.code]?.meta_description ?? ''}
+                                            value={
+                                                data.translations[locale.code]
+                                                    ?.meta_description ?? ''
+                                            }
                                             onChange={(e) =>
-                                                updateTranslation(locale.code, 'meta_description', e.target.value)
+                                                updateTranslation(
+                                                    locale.code,
+                                                    'meta_description',
+                                                    e.target.value,
+                                                )
                                             }
                                         />
                                         <InputError
-                                            message={errors[`translations.${locale.code}.meta_description` as keyof typeof errors]}
+                                            message={
+                                                errors[
+                                                    `translations.${locale.code}.meta_description` as keyof typeof errors
+                                                ]
+                                            }
                                         />
                                     </div>
                                 </div>

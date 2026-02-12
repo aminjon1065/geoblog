@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface CategoryTranslation {
@@ -38,9 +38,14 @@ export default function CategoriesIndex({ categories }: Props) {
             <Head title="Categories" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <Heading title="Categories" description="Manage post categories" />
+                    <Heading
+                        title="Categories"
+                        description="Manage post categories"
+                    />
                     <Button asChild>
-                        <Link href="/admin/categories/create">New Category</Link>
+                        <Link href="/admin/categories/create">
+                            New Category
+                        </Link>
                     </Button>
                 </div>
 
@@ -48,15 +53,26 @@ export default function CategoriesIndex({ categories }: Props) {
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium">Name</th>
-                                <th className="px-4 py-3 text-left font-medium">Slug</th>
-                                <th className="px-4 py-3 text-left font-medium">Sort Order</th>
-                                <th className="px-4 py-3 text-right font-medium">Actions</th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Name
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Slug
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    Sort Order
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {categories.map((category) => (
-                                <tr key={category.id} className="border-b last:border-0">
+                                <tr
+                                    key={category.id}
+                                    className="border-b last:border-0"
+                                >
                                     <td className="px-4 py-3 font-medium">
                                         {category.translations[0]?.name ?? '—'}
                                     </td>
@@ -68,15 +84,23 @@ export default function CategoriesIndex({ categories }: Props) {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/admin/categories/${category.id}/edit`}>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={`/admin/categories/${category.id}/edit`}
+                                                >
                                                     Edit
                                                 </Link>
                                             </Button>
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
-                                                onClick={() => handleDelete(category.id)}
+                                                onClick={() =>
+                                                    handleDelete(category.id)
+                                                }
                                             >
                                                 Delete
                                             </Button>
@@ -86,7 +110,10 @@ export default function CategoriesIndex({ categories }: Props) {
                             ))}
                             {categories.length === 0 && (
                                 <tr>
-                                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                                    <td
+                                        colSpan={4}
+                                        className="px-4 py-8 text-center text-muted-foreground"
+                                    >
                                         No categories found.
                                     </td>
                                 </tr>

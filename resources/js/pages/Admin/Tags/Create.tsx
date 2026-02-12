@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Locale {
@@ -97,19 +97,35 @@ export default function TagsCreate({ locales }: Props) {
                         {locales.map((locale) => (
                             <div
                                 key={locale.code}
-                                className={activeLocale === locale.code ? 'space-y-4' : 'hidden'}
+                                className={
+                                    activeLocale === locale.code
+                                        ? 'space-y-4'
+                                        : 'hidden'
+                                }
                             >
                                 <div className="space-y-2">
-                                    <Label htmlFor={`name-${locale.code}`}>Name</Label>
+                                    <Label htmlFor={`name-${locale.code}`}>
+                                        Name
+                                    </Label>
                                     <Input
                                         id={`name-${locale.code}`}
-                                        value={data.translations[locale.code]?.name ?? ''}
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.name ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.name` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.name` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
                             </div>

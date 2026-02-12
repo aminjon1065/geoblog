@@ -1,14 +1,20 @@
-import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import RichTextEditor from '@/components/ui/rich-text-editor';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 interface Locale {
@@ -83,7 +89,11 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
         post('/admin/posts');
     }
 
-    function updateTranslation(locale: string, field: keyof TranslationData, value: string) {
+    function updateTranslation(
+        locale: string,
+        field: keyof TranslationData,
+        value: string,
+    ) {
         setData('translations', {
             ...data.translations,
             [locale]: {
@@ -123,7 +133,10 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Post" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading title="Create Post" description="Add a new blog post" />
+                <Heading
+                    title="Create Post"
+                    description="Add a new blog post"
+                />
 
                 <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -132,7 +145,9 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
                             <Input
                                 id="slug"
                                 value={data.slug}
-                                onChange={(e) => setData('slug', e.target.value)}
+                                onChange={(e) =>
+                                    setData('slug', e.target.value)
+                                }
                             />
                             <InputError message={errors.slug} />
                         </div>
@@ -141,15 +156,21 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
                             <Label htmlFor="status">Status</Label>
                             <Select
                                 value={data.status}
-                                onValueChange={(value) => setData('status', value)}
+                                onValueChange={(value) =>
+                                    setData('status', value)
+                                }
                             >
                                 <SelectTrigger id="status">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="draft">Draft</SelectItem>
-                                    <SelectItem value="published">Published</SelectItem>
-                                    <SelectItem value="archived">Archived</SelectItem>
+                                    <SelectItem value="published">
+                                        Published
+                                    </SelectItem>
+                                    <SelectItem value="archived">
+                                        Archived
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                             <InputError message={errors.status} />
@@ -161,7 +182,9 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
                                 id="published_at"
                                 type="datetime-local"
                                 value={data.published_at}
-                                onChange={(e) => setData('published_at', e.target.value)}
+                                onChange={(e) =>
+                                    setData('published_at', e.target.value)
+                                }
                             />
                             <InputError message={errors.published_at} />
                         </div>
@@ -190,78 +213,149 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
                         {locales.map((locale) => (
                             <div
                                 key={locale.code}
-                                className={activeLocale === locale.code ? 'space-y-4' : 'hidden'}
+                                className={
+                                    activeLocale === locale.code
+                                        ? 'space-y-4'
+                                        : 'hidden'
+                                }
                             >
                                 <div className="space-y-2">
-                                    <Label htmlFor={`title-${locale.code}`}>Title</Label>
+                                    <Label htmlFor={`title-${locale.code}`}>
+                                        Title
+                                    </Label>
                                     <Input
                                         id={`title-${locale.code}`}
-                                        value={data.translations[locale.code]?.title ?? ''}
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.title ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, 'title', e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                'title',
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.title` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.title` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor={`excerpt-${locale.code}`}>Excerpt</Label>
+                                    <Label htmlFor={`excerpt-${locale.code}`}>
+                                        Excerpt
+                                    </Label>
                                     <textarea
                                         id={`excerpt-${locale.code}`}
                                         rows={3}
-                                        className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                                        value={data.translations[locale.code]?.excerpt ?? ''}
+                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                                        value={
+                                            data.translations[locale.code]
+                                                ?.excerpt ?? ''
+                                        }
                                         onChange={(e) =>
-                                            updateTranslation(locale.code, 'excerpt', e.target.value)
+                                            updateTranslation(
+                                                locale.code,
+                                                'excerpt',
+                                                e.target.value,
+                                            )
                                         }
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.excerpt` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.excerpt` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label>Content</Label>
                                     <RichTextEditor
-                                        content={data.translations[locale.code]?.content ?? ''}
-                                        onChange={(html) => updateTranslation(locale.code, 'content', html)}
+                                        content={
+                                            data.translations[locale.code]
+                                                ?.content ?? ''
+                                        }
+                                        onChange={(html) =>
+                                            updateTranslation(
+                                                locale.code,
+                                                'content',
+                                                html,
+                                            )
+                                        }
                                         placeholder="Write content..."
                                     />
                                     <InputError
-                                        message={errors[`translations.${locale.code}.content` as keyof typeof errors]}
+                                        message={
+                                            errors[
+                                                `translations.${locale.code}.content` as keyof typeof errors
+                                            ]
+                                        }
                                     />
                                 </div>
 
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor={`meta_title-${locale.code}`}>Meta Title</Label>
+                                        <Label
+                                            htmlFor={`meta_title-${locale.code}`}
+                                        >
+                                            Meta Title
+                                        </Label>
                                         <Input
                                             id={`meta_title-${locale.code}`}
-                                            value={data.translations[locale.code]?.meta_title ?? ''}
+                                            value={
+                                                data.translations[locale.code]
+                                                    ?.meta_title ?? ''
+                                            }
                                             onChange={(e) =>
-                                                updateTranslation(locale.code, 'meta_title', e.target.value)
+                                                updateTranslation(
+                                                    locale.code,
+                                                    'meta_title',
+                                                    e.target.value,
+                                                )
                                             }
                                         />
                                         <InputError
-                                            message={errors[`translations.${locale.code}.meta_title` as keyof typeof errors]}
+                                            message={
+                                                errors[
+                                                    `translations.${locale.code}.meta_title` as keyof typeof errors
+                                                ]
+                                            }
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor={`meta_description-${locale.code}`}>
+                                        <Label
+                                            htmlFor={`meta_description-${locale.code}`}
+                                        >
                                             Meta Description
                                         </Label>
                                         <Input
                                             id={`meta_description-${locale.code}`}
-                                            value={data.translations[locale.code]?.meta_description ?? ''}
+                                            value={
+                                                data.translations[locale.code]
+                                                    ?.meta_description ?? ''
+                                            }
                                             onChange={(e) =>
-                                                updateTranslation(locale.code, 'meta_description', e.target.value)
+                                                updateTranslation(
+                                                    locale.code,
+                                                    'meta_description',
+                                                    e.target.value,
+                                                )
                                             }
                                         />
                                         <InputError
-                                            message={errors[`translations.${locale.code}.meta_description` as keyof typeof errors]}
+                                            message={
+                                                errors[
+                                                    `translations.${locale.code}.meta_description` as keyof typeof errors
+                                                ]
+                                            }
                                         />
                                     </div>
                                 </div>
@@ -280,8 +374,12 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
                                         className="flex items-center gap-2 text-sm"
                                     >
                                         <Checkbox
-                                            checked={data.categories.includes(category.id)}
-                                            onCheckedChange={() => toggleCategory(category.id)}
+                                            checked={data.categories.includes(
+                                                category.id,
+                                            )}
+                                            onCheckedChange={() =>
+                                                toggleCategory(category.id)
+                                            }
                                         />
                                         {getCategoryName(category)}
                                     </label>
@@ -303,7 +401,9 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
                                     >
                                         <Checkbox
                                             checked={data.tags.includes(tag.id)}
-                                            onCheckedChange={() => toggleTag(tag.id)}
+                                            onCheckedChange={() =>
+                                                toggleTag(tag.id)
+                                            }
                                         />
                                         {getTagName(tag)}
                                     </label>
