@@ -11,5 +11,16 @@ class ContactRequest extends Model
         'email',
         'message',
         'locale',
+        'is_read',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_read' => 'boolean',
+        ];
+    }
 }

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FileText, FolderOpen, Image, LayoutGrid, Tag, Layers } from 'lucide-react';
+import { BookOpen, Briefcase, FileText, FolderOpen, Image, Inbox, LayoutGrid, Layers, Tag } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -38,6 +38,11 @@ const mainNavItems: NavItem[] = [
         icon: Tag,
     },
     {
+        title: 'Услуги',
+        href: '/admin/services',
+        icon: Briefcase,
+    },
+    {
         title: 'Страницы',
         href: '/admin/pages',
         icon: Layers,
@@ -46,6 +51,11 @@ const mainNavItems: NavItem[] = [
         title: 'Медиа',
         href: '/admin/media',
         icon: Image,
+    },
+    {
+        title: 'Заявки',
+        href: '/admin/contact-requests',
+        icon: Inbox,
     },
 ];
 

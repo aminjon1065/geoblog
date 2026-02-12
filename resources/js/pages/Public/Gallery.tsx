@@ -14,7 +14,6 @@ export default function Gallery() {
     const { images, translations } = usePage<GalleryProps>().props;
     const t = translations?.ui ?? {};
     const [lightbox, setLightbox] = useState<string | null>(null);
-    console.log(images);
     return (
         <PublicLayout>
             <Head title={t.nav_gallery ?? 'Галерея'} />

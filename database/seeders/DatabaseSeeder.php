@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             TagSeeder::class,
             PostSeeder::class,
             PageSeeder::class,
+            ServiceSeeder::class,
         ]);
         //        User::factory()->create([
         //            'name' => 'Test User',

@@ -24,6 +24,21 @@ class PageSeeder extends Seeder
                 'tj' => 'Тамос',
                 'en' => 'Contacts',
             ],
+            'projects' => [
+                'ru' => 'Проекты',
+                'tj' => 'Лоиҳаҳо',
+                'en' => 'Projects',
+            ],
+            'members' => [
+                'ru' => 'Члены Ассоциации',
+                'tj' => 'Аъзои Ассотсиатсия',
+                'en' => 'Members',
+            ],
+            'privacy' => [
+                'ru' => 'Политика конфиденциальности',
+                'tj' => 'Сиёсати махфият',
+                'en' => 'Privacy Policy',
+            ],
         ];
 
         foreach ($pages as $key => $titles) {

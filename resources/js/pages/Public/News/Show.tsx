@@ -15,7 +15,16 @@ export default function Show() {
 
     return (
         <PublicLayout>
-            <Head title={post?.meta?.title ?? post?.title ?? 'Новость'} />
+            <Head title={post?.meta?.title ?? post?.title ?? 'Новость'}>
+                {post?.meta?.description && (
+                    <meta name="description" content={post.meta.description} />
+                )}
+                {post?.title && <meta property="og:title" content={post.title} />}
+                {post?.meta?.description && (
+                    <meta property="og:description" content={post.meta.description} />
+                )}
+                <meta property="og:type" content="article" />
+            </Head>
 
             <section className="bg-primary pt-16 text-primary-foreground">
                 <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">
