@@ -12,8 +12,8 @@ return [
     'nav_links' => 'Пайвандҳо',
 
     // Organization
-    'org_name' => 'Ассотсиатсияи Геологҳои Тоҷикистон',
-    'org_short_name' => 'Ассотсиатсияи Геологҳо',
+    'org_name' => 'Ташкилоти ҷамъиятии «Асотсиатсияи Геологҳои Тоҷикистон»',
+    'org_short_name' => 'ТҶ «АГТ»',
     'org_line2' => 'Тоҷикистон',
     'org_description' => 'Созмони ҷамъиятӣ, ки мутахассисони соҳаи геологияи Тоҷикистонро муттаҳид мекунад.',
     'org_copyright' => 'Ассотсиатсияи Геологҳои Тоҷикистон. Ҳамаи ҳуқуқҳо ҳифз шудаанд.',
@@ -21,6 +21,13 @@ return [
     // Hero
     'hero_title' => 'Ассотсиатсияи Геологҳои Тоҷикистон',
     'hero_subtitle' => 'Рушди илми геология, экспертиза ва ҷамъияти касбӣ.',
+    'hero_cta' => 'Маълумоти бештар',
+    'hero_tagline' => 'Ҷамъияти геологии Тоҷикистон',
+    'stat_years' => 'Сол таҷриба',
+    'stat_members' => 'Аъзоён',
+    'stat_projects' => 'Лоиҳаҳо',
+    'stat_partners' => 'Шарикон',
+
 
     // Home — Mission
     'page_title' => 'Ассотсиатсияи Геологҳои Тоҷикистон',
@@ -36,10 +43,18 @@ return [
     'activity_cooperation_desc' => 'Шарикиҳо, конференсияҳо ва мубодилаи таҷриба.',
     'activity_development' => 'Рушди соҳа',
     'activity_development_desc' => 'Иштирок дар ташаккули бунёди меъёрию ҳуқуқӣ.',
+    'activity_mining' => 'Истихроҷи маъдан',
+    'activity_mining_desc' => 'Дастгирии рушди устувори соҳаи истихроҷи маъдан.',
+    'activity_education' => 'Омӯзиш',
+    'activity_education_desc' => 'Омӯзиши мутахассисон ва такмили ихтисос.',
+    'activity_community' => 'Ҷамъият',
+    'activity_community_desc' => 'Ҷамъияти мутахассисон дар соҳаи геология.',
+    'activities_subtitle' => 'Самтҳои мо',
 
     // Home — News
     'latest_news' => 'Навигариҳои охирин',
     'view_all_news' => 'Ҳамаи навигариҳо',
+    'news_subtitle' => 'Хабарҳо',
 
     // CTA
     'cta_title' => 'Ба ҷамъияти касбӣ ҳамроҳ шавед',
@@ -64,6 +79,12 @@ return [
     'read_more' => 'Хондан',
     'no_news' => 'Навигариҳо ҳоло нашр нашудаанд.',
     'content_unavailable' => 'Мундариҷа дастрас нест.',
+
+    // Services
+    'back_to_services' => 'Бозгашт ба хизматрасониҳо',
+    'nav_services' => 'Хизматрасониҳо',
+    'services_subtitle' => 'Каталоги хизматрасониҳо',
+
 
     // Pages fallback
     'no_content_yet' => 'Маълумот ба наздикӣ илова мешавад.',
