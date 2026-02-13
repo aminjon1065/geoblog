@@ -78,6 +78,11 @@ return [
     'read_more' => 'Read',
     'no_news' => 'No news published yet.',
     'content_unavailable' => 'Content is not available.',
+    'categories' => 'Categories',
+    'all' => 'All',
+    'tags' => 'Tags',
+
+
 
     // Services
     'back_to_services' => 'Back to services',

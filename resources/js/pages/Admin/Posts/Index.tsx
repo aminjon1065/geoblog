@@ -30,8 +30,8 @@ interface Props {
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Posts', href: '/admin/posts' },
+    { title: 'Дашбоард', href: '/dashboard' },
+    { title: 'Посты', href: '/admin/posts' },
 ];
 
 function statusVariant(status: string) {
@@ -56,15 +56,12 @@ export default function PostsIndex({ posts }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Posts" />
+            <Head title="Посты" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <Heading
-                        title="Posts"
-                        description="Manage your blog posts"
-                    />
+                    <Heading title="Посты" description="Управление блогом" />
                     <Button asChild>
-                        <Link href="/admin/posts/create">New Post</Link>
+                        <Link href="/admin/posts/create">Добавить</Link>
                     </Button>
                 </div>
 
@@ -73,16 +70,13 @@ export default function PostsIndex({ posts }: Props) {
                         <thead className="border-b bg-muted/50">
                             <tr>
                                 <th className="px-4 py-3 text-left font-medium">
-                                    Title
+                                    Название
                                 </th>
                                 <th className="px-4 py-3 text-left font-medium">
-                                    Status
+                                    Статус
                                 </th>
                                 <th className="px-4 py-3 text-left font-medium">
-                                    Author
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Date
+                                    Дата публикации
                                 </th>
                                 <th className="px-4 py-3 text-right font-medium">
                                     Actions
@@ -109,9 +103,6 @@ export default function PostsIndex({ posts }: Props) {
                                         >
                                             {post.status}
                                         </Badge>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {post.author?.name ?? '—'}
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {post.published_at

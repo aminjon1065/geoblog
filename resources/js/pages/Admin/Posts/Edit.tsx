@@ -46,8 +46,8 @@ interface PostData {
     status: string;
     published_at: string | null;
     translations: Record<string, TranslationData>;
-    categories: number[];
-    tags: number[];
+    category_ids: number[];
+    tag_ids: number[];
 }
 
 interface FormData {
@@ -91,10 +91,11 @@ export default function PostsEdit({ post, locales, categories, tags }: Props) {
         status: post.status,
         published_at: post.published_at ?? '',
         translations: initialTranslations,
-        categories: post.categories,
-        tags: post.tags,
+        categories: post.category_ids ?? [],
+        tags: post.tag_ids ?? [],
     });
-
+    console.log(data);
+    
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         put(`/admin/posts/${post.id}`);
@@ -412,8 +413,10 @@ export default function PostsEdit({ post, locales, categories, tags }: Props) {
                                     >
                                         <Checkbox
                                             checked={data.tags.includes(tag.id)}
-                                            onCheckedChange={() =>
-                                                toggleTag(tag.id)
+                                            onCheckedChange={(checked) =>
+                                                checked
+                                                    ? toggleTag(tag.id)
+                                                    : toggleTag(tag.id)
                                             }
                                         />
                                         {getTagName(tag)}
