@@ -41,7 +41,6 @@ interface TranslationData {
 }
 
 interface FormData {
-    slug: string;
     status: string;
     published_at: string;
     translations: Record<string, TranslationData>;
@@ -76,7 +75,6 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
     }
 
     const { data, setData, post, processing, errors } = useForm<FormData>({
-        slug: '',
         status: 'draft',
         published_at: '',
         translations: initialTranslations,
@@ -140,18 +138,6 @@ export default function PostsCreate({ locales, categories, tags }: Props) {
 
                 <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="slug">Slug</Label>
-                            <Input
-                                id="slug"
-                                value={data.slug}
-                                onChange={(e) =>
-                                    setData('slug', e.target.value)
-                                }
-                            />
-                            <InputError message={errors.slug} />
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="status">Status</Label>
                             <Select

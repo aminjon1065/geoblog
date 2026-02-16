@@ -22,7 +22,7 @@ class StorePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'slug' => ['required', 'unique:posts', 'max:255', 'alpha_dash'],
+            'slug' => ['unique:posts', 'max:255', 'alpha_dash'],
             'status' => ['required', 'in:draft,published'],
             'published_at' => ['nullable', 'date'],
             'translations' => ['required', 'array'],

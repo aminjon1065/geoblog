@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import GetStatusBadge from '@/helpers/getStatusBadge';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -33,19 +33,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Дашбоард', href: '/dashboard' },
     { title: 'Посты', href: '/admin/posts' },
 ];
-
-function statusVariant(status: string) {
-    switch (status) {
-        case 'published':
-            return 'default' as const;
-        case 'draft':
-            return 'secondary' as const;
-        case 'archived':
-            return 'outline' as const;
-        default:
-            return 'secondary' as const;
-    }
-}
 
 export default function PostsIndex({ posts }: Props) {
     function handleDelete(id: number) {
@@ -98,11 +85,7 @@ export default function PostsIndex({ posts }: Props) {
                                         </Link>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Badge
-                                            variant={statusVariant(post.status)}
-                                        >
-                                            {post.status}
-                                        </Badge>
+                                        <GetStatusBadge status={post.status} />
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {post.published_at

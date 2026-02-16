@@ -10,6 +10,7 @@ use App\Models\Locale;
 use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,8 +48,9 @@ class PostController extends Controller
 
     public function store(StorePostRequest $request): RedirectResponse
     {
+        dd(Str::slug($request->validated('translations')));
         $post = Post::create([
-            'slug' => $request->validated('slug'),
+            'slug' => Str::slug($request->validated('translations')->firstKey('title')),
             'status' => $request->validated('status'),
             'published_at' => $request->validated('published_at'),
             'author_id' => $request->user()->id,
