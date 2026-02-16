@@ -13,6 +13,7 @@ class ServiceController extends Controller
     {
         $services = Service::query()
             ->where('is_active', true)
+            ->whereHas('translation')
             ->with('translation')
             ->orderBy('sort_order')
             ->get()
@@ -33,6 +34,7 @@ class ServiceController extends Controller
         $service = Service::query()
             ->where('slug', $slug)
             ->where('is_active', true)
+            ->whereHas('translation')
             ->with(['translation', 'media'])
             ->firstOrFail();
 

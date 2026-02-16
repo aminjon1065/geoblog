@@ -15,6 +15,7 @@ class PostController extends Controller
     {
         $query = Post::query()
             ->published()
+            ->whereHas('translation')
             ->with([
                 'translation',
                 'categories.translation',
@@ -85,6 +86,7 @@ class PostController extends Controller
     {
         $post = Post::query()
             ->published()
+            ->whereHas('translation')
             ->where('slug', $slug)
             ->with([
                 'translation',

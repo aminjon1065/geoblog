@@ -6,7 +6,6 @@ use App\Http\Controllers\Public\PostController;
 use App\Http\Controllers\Public\ServiceController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', fn () => redirect('/'.config('app.locale')));
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
@@ -29,9 +28,9 @@ Route::prefix('{locale}')
         Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
     });
 
-Route::get('dashboard', function () {
-    return Inertia::render('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', App\Http\Controllers\Admin\DashboardController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/admin.php';

@@ -48,15 +48,26 @@ class PostController extends Controller
 
     public function store(StorePostRequest $request): RedirectResponse
     {
-        dd(Str::slug($request->validated('translations')));
+        $translations = collect($request->validated('translations'))
+            ->filter(fn (array $data) => ! empty($data['title']));
+
+        $firstTitle = $translations->first()['title'];
+        $slug = Str::slug($firstTitle);
+
+        $publishedAt = $request->validated('published_at');
+
+        if ($request->validated('status') === 'published' && empty($publishedAt)) {
+            $publishedAt = now();
+        }
+
         $post = Post::create([
-            'slug' => Str::slug($request->validated('translations')->firstKey('title')),
+            'slug' => $slug,
             'status' => $request->validated('status'),
-            'published_at' => $request->validated('published_at'),
+            'published_at' => $publishedAt,
             'author_id' => $request->user()->id,
         ]);
 
-        foreach ($request->validated('translations') as $locale => $data) {
+        foreach ($translations as $locale => $data) {
             $post->translations()->create([
                 'locale' => $locale,
                 ...$data,
@@ -102,18 +113,35 @@ class PostController extends Controller
 
     public function update(UpdatePostRequest $request, Post $post): RedirectResponse
     {
+        $translations = collect($request->validated('translations'))
+            ->filter(fn (array $data) => ! empty($data['title']));
+
+        $firstTitle = $translations->first()['title'];
+        $slug = Str::slug($firstTitle);
+
+        $publishedAt = $request->validated('published_at');
+
+        if ($request->validated('status') === 'published' && empty($publishedAt)) {
+            $publishedAt = now();
+        }
+
         $post->update([
-            'slug' => $request->validated('slug'),
+            'slug' => $slug,
             'status' => $request->validated('status'),
-            'published_at' => $request->validated('published_at'),
+            'published_at' => $publishedAt,
         ]);
 
-        foreach ($request->validated('translations') as $locale => $data) {
+        $activeLocales = [];
+
+        foreach ($translations as $locale => $data) {
             $post->translations()->updateOrCreate(
                 ['locale' => $locale],
                 $data,
             );
+            $activeLocales[] = $locale;
         }
+
+        $post->translations()->whereNotIn('locale', $activeLocales)->delete();
 
         $post->categories()->sync($request->validated('categories', []));
         $post->tags()->sync($request->validated('tags', []));

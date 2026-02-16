@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import {
-    BookOpen,
     Briefcase,
     FileText,
     FolderOpen,
@@ -9,6 +8,7 @@ import {
     LayoutGrid,
     Layers,
     Tag,
+    GlobeIcon,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -73,7 +73,7 @@ const footerNavItems: NavItem[] = [
     {
         title: 'Сайт',
         href: '/',
-        icon: BookOpen,
+        icon: GlobeIcon,
     },
 ];
 

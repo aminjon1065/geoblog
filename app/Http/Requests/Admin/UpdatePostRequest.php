@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdatePostRequest extends FormRequest
 {
@@ -23,11 +22,10 @@ class UpdatePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'slug' => ['required', Rule::unique('posts')->ignore($this->route('post')->id), 'max:255', 'alpha_dash'],
             'status' => ['required', 'in:draft,published'],
             'published_at' => ['nullable', 'date'],
             'translations' => ['required', 'array'],
-            'translations.*.title' => ['required', 'string', 'max:255'],
+            'translations.*.title' => ['nullable', 'string', 'max:255'],
             'translations.*.excerpt' => ['nullable', 'string'],
             'translations.*.content' => ['nullable', 'string'],
             'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
@@ -37,5 +35,27 @@ class UpdatePostRequest extends FormRequest
             'tags' => ['nullable', 'array'],
             'tags.*' => ['exists:tags,id'],
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Contracts\Validation\Validator $validator) {
+            $translations = $this->input('translations', []);
+            $hasAtLeastOneTitle = false;
+
+            foreach ($translations as $data) {
+                if (! empty($data['title'])) {
+                    $hasAtLeastOneTitle = true;
+                    break;
+                }
+            }
+
+            if (! $hasAtLeastOneTitle) {
+                $validator->errors()->add('translations', 'At least one translation with a title is required.');
+            }
+        });
     }
 }

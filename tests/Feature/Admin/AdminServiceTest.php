@@ -40,7 +40,6 @@ test('authenticated user can view create service form', function () {
 
 test('authenticated user can store a service', function () {
     $this->post(route('admin.services.store'), [
-        'slug' => 'new-service',
         'is_active' => true,
         'sort_order' => 1,
         'translations' => [
@@ -52,13 +51,13 @@ test('authenticated user can store a service', function () {
         ],
     ])->assertRedirect(route('admin.services.index'));
 
-    $this->assertDatabaseHas('services', ['slug' => 'new-service']);
+    $this->assertDatabaseHas('services', ['slug' => 'novaia-usluga']);
     $this->assertDatabaseHas('service_translations', ['title' => 'Новая услуга', 'locale' => 'ru']);
 });
 
 test('store service validates required fields', function () {
     $this->post(route('admin.services.store'), [])
-        ->assertSessionHasErrors(['slug', 'translations']);
+        ->assertSessionHasErrors(['translations']);
 });
 
 test('authenticated user can update a service', function () {
@@ -69,7 +68,6 @@ test('authenticated user can update a service', function () {
     ]);
 
     $this->put(route('admin.services.update', $service), [
-        'slug' => 'updated-service',
         'is_active' => false,
         'sort_order' => 5,
         'translations' => [
@@ -80,7 +78,7 @@ test('authenticated user can update a service', function () {
     ])->assertRedirect(route('admin.services.index'));
 
     $service->refresh();
-    expect($service->slug)->toBe('updated-service');
+    expect($service->slug)->toBe('obnovlennaia-usluga');
     expect($service->is_active)->toBeFalse();
 });
 

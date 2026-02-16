@@ -53,7 +53,6 @@ test('authenticated user can store a post', function () {
     $tag = Tag::create(['slug' => 'fieldwork']);
 
     $this->post(route('admin.posts.store'), [
-        'slug' => 'new-post',
         'status' => 'draft',
         'published_at' => null,
         'translations' => [
@@ -67,10 +66,10 @@ test('authenticated user can store a post', function () {
         'tags' => [$tag->id],
     ])->assertRedirect(route('admin.posts.index'));
 
-    $this->assertDatabaseHas('posts', ['slug' => 'new-post', 'status' => 'draft']);
+    $this->assertDatabaseHas('posts', ['slug' => 'testovaia-statia', 'status' => 'draft']);
     $this->assertDatabaseHas('post_translations', ['title' => 'Тестовая статья', 'locale' => 'ru']);
 
-    $post = Post::where('slug', 'new-post')->first();
+    $post = Post::where('slug', 'testovaia-statia')->first();
     expect($post->categories)->toHaveCount(1);
     expect($post->tags)->toHaveCount(1);
     expect($post->author_id)->toBe($this->user->id);
@@ -78,23 +77,31 @@ test('authenticated user can store a post', function () {
 
 test('store post validates required fields', function () {
     $this->post(route('admin.posts.store'), [])
-        ->assertSessionHasErrors(['slug', 'status', 'translations']);
+        ->assertSessionHasErrors(['status', 'translations']);
 });
 
-test('store post validates unique slug', function () {
-    Post::create([
-        'slug' => 'existing-slug',
-        'status' => 'draft',
-        'author_id' => $this->user->id,
-    ]);
-
+test('store post requires at least one translation with a title', function () {
     $this->post(route('admin.posts.store'), [
-        'slug' => 'existing-slug',
         'status' => 'draft',
         'translations' => [
-            'ru' => ['title' => 'Test'],
+            'ru' => ['title' => '', 'excerpt' => 'No title here'],
+            'en' => ['title' => '', 'content' => 'No title either'],
         ],
-    ])->assertSessionHasErrors('slug');
+    ])->assertSessionHasErrors('translations');
+});
+
+test('store post allows partial translations (not all locales required)', function () {
+    $this->post(route('admin.posts.store'), [
+        'status' => 'draft',
+        'translations' => [
+            'ru' => ['title' => 'Только русский', 'excerpt' => '', 'content' => 'Контент'],
+            'en' => ['title' => '', 'excerpt' => '', 'content' => ''],
+        ],
+    ])->assertRedirect(route('admin.posts.index'));
+
+    $this->assertDatabaseHas('posts', ['slug' => 'tolko-russkii']);
+    $this->assertDatabaseHas('post_translations', ['locale' => 'ru', 'title' => 'Только русский']);
+    $this->assertDatabaseMissing('post_translations', ['locale' => 'en']);
 });
 
 test('authenticated user can view edit post form', function () {
@@ -123,7 +130,6 @@ test('authenticated user can update a post', function () {
     ]);
 
     $this->put(route('admin.posts.update', $post), [
-        'slug' => 'updated-slug',
         'status' => 'published',
         'published_at' => '2025-01-01',
         'translations' => [
@@ -138,8 +144,38 @@ test('authenticated user can update a post', function () {
     ])->assertRedirect(route('admin.posts.index'));
 
     $post->refresh();
-    expect($post->slug)->toBe('updated-slug');
+    expect($post->slug)->toBe('obnovlennaia-statia');
     expect($post->status)->toBe('published');
+});
+
+test('update post removes translations for cleared locales', function () {
+    Locale::firstOrCreate(['code' => 'en'], [
+        'name' => 'English',
+        'is_active' => true,
+        'sort_order' => 2,
+    ]);
+
+    $post = Post::create([
+        'slug' => 'multi-lang',
+        'status' => 'draft',
+        'author_id' => $this->user->id,
+    ]);
+
+    $post->translations()->create(['locale' => 'ru', 'title' => 'Русский', 'content' => 'Контент']);
+    $post->translations()->create(['locale' => 'en', 'title' => 'English', 'content' => 'Content']);
+
+    $this->put(route('admin.posts.update', $post), [
+        'status' => 'draft',
+        'translations' => [
+            'ru' => ['title' => 'Только русский', 'excerpt' => '', 'content' => 'Контент'],
+            'en' => ['title' => '', 'excerpt' => '', 'content' => ''],
+        ],
+        'categories' => [],
+        'tags' => [],
+    ])->assertRedirect(route('admin.posts.index'));
+
+    $this->assertDatabaseHas('post_translations', ['post_id' => $post->id, 'locale' => 'ru', 'title' => 'Только русский']);
+    $this->assertDatabaseMissing('post_translations', ['post_id' => $post->id, 'locale' => 'en']);
 });
 
 test('authenticated user can delete a post', function () {
