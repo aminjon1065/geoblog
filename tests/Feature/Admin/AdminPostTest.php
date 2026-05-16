@@ -4,10 +4,9 @@ use App\Models\Category;
 use App\Models\Locale;
 use App\Models\Post;
 use App\Models\Tag;
-use App\Models\User;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = userWithRole('admin');
     $this->actingAs($this->user);
 
     Locale::firstOrCreate(['code' => 'ru'], [
@@ -188,7 +187,7 @@ test('authenticated user can delete a post', function () {
     $this->delete(route('admin.posts.destroy', $post))
         ->assertRedirect(route('admin.posts.index'));
 
-    $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+    $this->assertSoftDeleted('posts', ['id' => $post->id]);
 });
 
 test('published post appears on news index', function () {

@@ -7,10 +7,16 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
+test('users without admin-panel access cannot visit the dashboard', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
     $this->actingAs($user);
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    $this->get(route('dashboard'))->assertForbidden();
+});
+
+test('users with admin-panel access can visit the dashboard', function () {
+    $user = userWithRole('admin');
+    $this->actingAs($user);
+
+    $this->get(route('dashboard'))->assertOk();
 });

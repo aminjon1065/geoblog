@@ -25,6 +25,7 @@ export type PostDetail = {
     meta: {
         title: string | null;
         description: string | null;
+        image?: string | null;
     };
     author: string | null;
     categories: PostCategory[];

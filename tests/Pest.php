@@ -41,6 +41,31 @@ expect()->extend('toBeOne', function () {
 |
 */
 
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
+
+/**
+ * Seed the RBAC catalog and return a freshly created user with the given role assigned.
+ * Use in feature tests instead of `User::factory()->create()` whenever the test exercises
+ * an admin route.
+ */
+function userWithRole(string $role = 'admin'): User
+{
+    if (Spatie\Permission\Models\Role::query()->doesntExist()) {
+        (new RoleSeeder)->run();
+    }
+
+    app(Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $user->assignRole($role);
+
+    return $user;
+}
+
 function something()
 {
     // ..

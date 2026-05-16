@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { ConfirmButton } from '@/components/admin/confirm-button';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -27,10 +29,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function CategoriesIndex({ categories }: Props) {
+    const { can } = usePermissions();
+    const canCreate = can('categories.create');
+    const canUpdate = can('categories.update');
+    const canDelete = can('categories.delete');
+
     function handleDelete(id: number) {
-        if (confirm('Are you sure you want to delete this category?')) {
-            router.delete(`/admin/categories/${id}`);
-        }
+        router.delete(`/admin/categories/${id}`, { preserveScroll: true });
     }
 
     return (
@@ -42,11 +47,13 @@ export default function CategoriesIndex({ categories }: Props) {
                         title="Categories"
                         description="Manage post categories"
                     />
-                    <Button asChild>
-                        <Link href="/admin/categories/create">
-                            New Category
-                        </Link>
-                    </Button>
+                    {canCreate && (
+                        <Button asChild>
+                            <Link href="/admin/categories/create">
+                                New Category
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border">
@@ -84,26 +91,24 @@ export default function CategoriesIndex({ categories }: Props) {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`/admin/categories/${category.id}/edit`}
+                                            {canUpdate && (
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link
+                                                        href={`/admin/categories/${category.id}/edit`}
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <ConfirmButton
+                                                    title="Delete category?"
+                                                    description="Posts in this category will no longer be associated with it."
+                                                    onConfirm={() => handleDelete(category.id)}
                                                 >
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleDelete(category.id)
-                                                }
-                                            >
-                                                Delete
-                                            </Button>
+                                                    Delete
+                                                </ConfirmButton>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

@@ -7,13 +7,26 @@ use App\Http\Requests\Admin\StoreServiceRequest;
 use App\Http\Requests\Admin\UpdateServiceRequest;
 use App\Models\Locale;
 use App\Models\Service;
+use App\Support\HtmlSanitizer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ServiceController extends Controller
+class ServiceController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:viewAny,'.Service::class, only: ['index']),
+            new Middleware('can:create,'.Service::class, only: ['create', 'store']),
+            new Middleware('can:update,service', only: ['edit', 'update']),
+            new Middleware('can:delete,service', only: ['destroy']),
+        ];
+    }
+
     public function index(): Response
     {
         $services = Service::query()
@@ -35,7 +48,12 @@ class ServiceController extends Controller
 
     public function store(StoreServiceRequest $request): RedirectResponse
     {
-        $translations = collect($request->validated('translations'))
+        $sanitized = HtmlSanitizer::cleanTranslations(
+            $request->validated('translations', []),
+            ['content'],
+        );
+
+        $translations = collect($sanitized)
             ->filter(fn (array $data) => ! empty($data['title']));
 
         $firstTitle = $translations->first()['title'];
@@ -54,7 +72,7 @@ class ServiceController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.services.index')->with('success', true);
+        return redirect()->route('admin.services.index')->with('success', 'Service created.');
     }
 
     public function edit(Service $service): Response
@@ -81,7 +99,12 @@ class ServiceController extends Controller
 
     public function update(UpdateServiceRequest $request, Service $service): RedirectResponse
     {
-        $translations = collect($request->validated('translations'))
+        $sanitized = HtmlSanitizer::cleanTranslations(
+            $request->validated('translations', []),
+            ['content'],
+        );
+
+        $translations = collect($sanitized)
             ->filter(fn (array $data) => ! empty($data['title']));
 
         $firstTitle = $translations->first()['title'];
@@ -105,13 +128,13 @@ class ServiceController extends Controller
 
         $service->translations()->whereNotIn('locale', $activeLocales)->delete();
 
-        return redirect()->route('admin.services.index')->with('success', true);
+        return redirect()->route('admin.services.index')->with('success', 'Service updated.');
     }
 
     public function destroy(Service $service): RedirectResponse
     {
         $service->delete();
 
-        return redirect()->route('admin.services.index')->with('success', true);
+        return redirect()->route('admin.services.index')->with('success', 'Service deleted.');
     }
 }

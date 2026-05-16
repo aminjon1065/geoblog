@@ -1,7 +1,8 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, X } from 'lucide-react';
 import { useState } from 'react';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import type { SharedData } from '@/types';
@@ -20,38 +21,29 @@ interface ServiceDetail {
     meta: {
         title: string | null;
         description: string | null;
+        image?: string | null;
     };
     images: ServiceImage[];
 }
 
 interface ServiceShowProps extends SharedData {
     service: ServiceDetail;
+    structuredData?: Record<string, unknown>[];
 }
 
 export default function ServiceShow() {
-    const { service, locale, translations } = usePage<ServiceShowProps>().props;
+    const { service, locale, translations, structuredData } = usePage<ServiceShowProps>().props;
     const t = translations?.ui ?? {};
     const [lightbox, setLightbox] = useState<string | null>(null);
 
     return (
         <PublicLayout>
-            <Head title={service?.meta?.title ?? service?.title ?? 'Услуга'}>
-                {service?.meta?.description && (
-                    <meta
-                        name="description"
-                        content={service.meta.description}
-                    />
-                )}
-                {service?.title && (
-                    <meta property="og:title" content={service.title} />
-                )}
-                {service?.meta?.description && (
-                    <meta
-                        property="og:description"
-                        content={service.meta.description}
-                    />
-                )}
-            </Head>
+            <SeoHead
+                title={service?.meta?.title ?? service?.title ?? 'Услуга'}
+                description={service?.meta?.description}
+                image={service?.meta?.image ?? null}
+                structuredData={structuredData ?? null}
+            />
 
             <section className="bg-primary pt-16 text-primary-foreground">
                 <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">

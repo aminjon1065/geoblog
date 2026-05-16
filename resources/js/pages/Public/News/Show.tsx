@@ -1,35 +1,31 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Calendar, User } from 'lucide-react';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import type { SharedData, PostDetail, PostCategory, PostTag } from '@/types';
 
 interface NewsShowProps extends SharedData {
     post: PostDetail;
+    structuredData?: Record<string, unknown>[];
 }
 
 export default function Show() {
-    const { post, locale, translations } = usePage<NewsShowProps>().props;
+    const { post, locale, translations, structuredData } = usePage<NewsShowProps>().props;
     const t = translations?.ui ?? {};
 
     return (
         <PublicLayout>
-            <Head title={post?.meta?.title ?? post?.title ?? 'Новость'}>
-                {post?.meta?.description && (
-                    <meta name="description" content={post.meta.description} />
-                )}
-                {post?.title && (
-                    <meta property="og:title" content={post.title} />
-                )}
-                {post?.meta?.description && (
-                    <meta
-                        property="og:description"
-                        content={post.meta.description}
-                    />
-                )}
-                <meta property="og:type" content="article" />
-            </Head>
+            <SeoHead
+                title={post?.meta?.title ?? post?.title ?? 'Новость'}
+                description={post?.meta?.description}
+                image={post?.meta?.image ?? null}
+                ogType="article"
+                publishedTime={post?.published_at ?? null}
+                author={post?.author ?? null}
+                structuredData={structuredData ?? null}
+            />
 
             <section className="bg-primary pt-16 text-primary-foreground">
                 <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">

@@ -1,6 +1,7 @@
-import { Head, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import type { SharedData, PageData } from '@/types';
 
@@ -14,7 +15,7 @@ export default function About() {
 
     return (
         <PublicLayout>
-            <Head title={page?.title ?? t.nav_about ?? 'О нас'} />
+            <SeoHead title={page?.title ?? t.nav_about ?? 'О нас'} />
 
             <PageHero
                 title={page?.title ?? t.nav_about ?? 'О нас'}

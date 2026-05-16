@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { ConfirmButton } from '@/components/admin/confirm-button';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -25,10 +27,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function TagsIndex({ tags }: Props) {
+    const { can } = usePermissions();
+    const canCreate = can('tags.create');
+    const canUpdate = can('tags.update');
+    const canDelete = can('tags.delete');
+
     function handleDelete(id: number) {
-        if (confirm('Are you sure you want to delete this tag?')) {
-            router.delete(`/admin/tags/${id}`);
-        }
+        router.delete(`/admin/tags/${id}`, { preserveScroll: true });
     }
 
     return (
@@ -37,9 +42,11 @@ export default function TagsIndex({ tags }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <Heading title="Tags" description="Manage post tags" />
-                    <Button asChild>
-                        <Link href="/admin/tags/create">New Tag</Link>
-                    </Button>
+                    {canCreate && (
+                        <Button asChild>
+                            <Link href="/admin/tags/create">New Tag</Link>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border">
@@ -71,26 +78,22 @@ export default function TagsIndex({ tags }: Props) {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`/admin/tags/${tag.id}/edit`}
+                                            {canUpdate && (
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/admin/tags/${tag.id}/edit`}>
+                                                        Edit
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <ConfirmButton
+                                                    title="Delete tag?"
+                                                    description="Posts tagged with this will lose the tag."
+                                                    onConfirm={() => handleDelete(tag.id)}
                                                 >
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleDelete(tag.id)
-                                                }
-                                            >
-                                                Delete
-                                            </Button>
+                                                    Delete
+                                                </ConfirmButton>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

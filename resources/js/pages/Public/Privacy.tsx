@@ -1,6 +1,7 @@
-import { Head, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import type { SharedData, PageData } from '@/types';
 
@@ -14,21 +15,17 @@ export default function Privacy() {
 
     return (
         <PublicLayout>
-            <Head
+            <SeoHead
                 title={
                     page?.title ??
                     t.privacy_policy ??
                     'Политика конфиденциальности'
                 }
-            >
-                <meta
-                    name="description"
-                    content={
-                        t.privacy_description ??
-                        'Политика обработки персональных данных'
-                    }
-                />
-            </Head>
+                description={
+                    t.privacy_description ??
+                    'Политика обработки персональных данных'
+                }
+            />
 
             <PageHero
                 title={

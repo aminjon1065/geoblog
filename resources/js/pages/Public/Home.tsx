@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Mountain, Globe, Scale, Pickaxe, BookOpen, Users } from 'lucide-react';
 import { ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -6,12 +6,15 @@ import CTA from '@/components/public/CTA';
 import Hero from '@/components/public/Hero';
 import NewsCard from '@/components/public/NewsCard';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import type { SharedData, PostSummary } from '@/types';
 
 interface HomeProps extends SharedData {
     latestNews: PostSummary[];
+    structuredData?: Record<string, unknown>[];
+    ogImage?: string | null;
 }
 
 interface Activity {
@@ -21,7 +24,8 @@ interface Activity {
 }
 
 export default function Home() {
-    const { locale, translations, latestNews } = usePage<HomeProps>().props;
+    const { locale, translations, latestNews, structuredData, ogImage } =
+        usePage<HomeProps>().props;
     const t = translations?.ui ?? {};
 
     const activities: Activity[] = [
@@ -69,28 +73,19 @@ export default function Home() {
         },
     ];
 
+    const homeTitle = t.page_title ?? 'Ассоциация Геологов Таджикистана';
+    const homeDescription =
+        t.hero_subtitle ??
+        'Развитие геологической науки, экспертизы и профессионального сообщества.';
+
     return (
         <PublicLayout>
-            <Head title={t.page_title ?? 'Ассоциация Геологов Таджикистана'}>
-                <meta
-                    name="description"
-                    content={
-                        t.hero_subtitle ??
-                        'Развитие геологической науки, экспертизы и профессионального сообщества.'
-                    }
-                />
-                <meta
-                    property="og:title"
-                    content={t.page_title ?? 'Ассоциация Геологов Таджикистана'}
-                />
-                <meta
-                    property="og:description"
-                    content={
-                        t.hero_subtitle ??
-                        'Развитие геологической науки, экспертизы и профессионального сообщества.'
-                    }
-                />
-            </Head>
+            <SeoHead
+                title={homeTitle}
+                description={homeDescription}
+                image={ogImage ?? null}
+                structuredData={structuredData ?? null}
+            />
 
             <Hero />
 

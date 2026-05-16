@@ -6,15 +6,29 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Category extends Model
 {
+    use LogsActivity, SoftDeletes;
+
     public $timestamps = false;
 
     protected $fillable = [
         'slug',
         'sort_order',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['slug', 'sort_order'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('category');
+    }
 
     public function translations(): HasMany
     {

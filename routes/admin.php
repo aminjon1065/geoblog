@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactRequestController;
 use App\Http\Controllers\Admin\MediaController;
@@ -9,7 +10,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\TagController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])
+Route::middleware(['auth', 'verified', 'can:access-admin-panel'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -20,4 +21,6 @@ Route::middleware(['auth', 'verified'])
         Route::resource('pages', PageController::class)->only(['index', 'edit', 'update']);
         Route::resource('media', MediaController::class)->only(['index', 'store', 'destroy']);
         Route::resource('contact-requests', ContactRequestController::class)->only(['index', 'show', 'destroy']);
+
+        Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
     });

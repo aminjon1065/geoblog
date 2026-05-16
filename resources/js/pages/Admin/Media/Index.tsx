@@ -1,7 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import { useRef } from 'react';
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
+import { ConfirmButton } from '@/components/admin/confirm-button';
+import { Pagination, type PaginatedShape } from '@/components/admin/pagination';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -13,14 +15,9 @@ interface MediaItem {
     created_at: string;
 }
 
-interface PaginatedMedia {
+interface PaginatedMedia extends PaginatedShape {
     data: MediaItem[];
-    current_page: number;
-    last_page: number;
     per_page: number;
-    total: number;
-    next_page_url: string | null;
-    prev_page_url: string | null;
 }
 
 interface Props {
@@ -48,6 +45,9 @@ function isImage(mimeType: string): boolean {
 
 export default function MediaIndex({ media }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { can } = usePermissions();
+    const canUpload = can('media.upload');
+    const canDelete = can('media.delete');
 
     function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const files = e.target.files;
@@ -71,9 +71,7 @@ export default function MediaIndex({ media }: Props) {
     }
 
     function handleDelete(id: number) {
-        if (confirm('Are you sure you want to delete this file?')) {
-            router.delete(`/admin/media/${id}`);
-        }
+        router.delete(`/admin/media/${id}`, { preserveScroll: true });
     }
 
     return (
@@ -87,18 +85,19 @@ export default function MediaIndex({ media }: Props) {
                     />
                 </div>
 
-                {/* Upload */}
-                <div className="rounded-lg border border-dashed p-6">
-                    <div className="flex items-center gap-4">
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            onChange={handleUpload}
-                            className="text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
-                        />
+                {canUpload && (
+                    <div className="rounded-lg border border-dashed p-6">
+                        <div className="flex items-center gap-4">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                onChange={handleUpload}
+                                className="text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Media Grid */}
                 {media.data.length > 0 ? (
@@ -136,15 +135,17 @@ export default function MediaIndex({ media }: Props) {
                                     </p>
                                 </div>
 
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleDelete(item.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
+                                {canDelete && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <ConfirmButton
+                                            title="Delete file?"
+                                            description="This will permanently remove the file from storage."
+                                            onConfirm={() => handleDelete(item.id)}
+                                        >
+                                            Delete
+                                        </ConfirmButton>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -154,39 +155,7 @@ export default function MediaIndex({ media }: Props) {
                     </div>
                 )}
 
-                {/* Pagination */}
-                {media.last_page > 1 && (
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            Page {media.current_page} of {media.last_page} (
-                            {media.total} total)
-                        </p>
-                        <div className="flex gap-2">
-                            {media.prev_page_url && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        router.get(media.prev_page_url!)
-                                    }
-                                >
-                                    Previous
-                                </Button>
-                            )}
-                            {media.next_page_url && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        router.get(media.next_page_url!)
-                                    }
-                                >
-                                    Next
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                )}
+                <Pagination meta={media} />
             </div>
         </AppLayout>
     );

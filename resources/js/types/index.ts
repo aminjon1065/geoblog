@@ -21,6 +21,17 @@ export type FlashData = {
     error?: string;
 };
 
+export type SeoAlternate = {
+    locale: string;
+    url: string;
+};
+
+export type SeoData = {
+    canonical: string;
+    locale: string;
+    alternates: SeoAlternate[];
+};
+
 export type SharedData = {
     name: string;
     auth: Auth;
@@ -29,5 +40,6 @@ export type SharedData = {
     translations: TranslationsData;
     flash?: FlashData;
     sidebarOpen: boolean;
+    seo?: SeoData;
     [key: string]: unknown;
 };

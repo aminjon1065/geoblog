@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /** Spatie permission required to see this item. Omit to allow any signed-in admin. */
+    permission?: string;
 };

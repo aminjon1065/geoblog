@@ -1,8 +1,9 @@
-import { Head, usePage, useForm } from '@inertiajs/react';
+import { usePage, useForm } from '@inertiajs/react';
 import { MapPin, Mail, Phone, ArrowRight } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PublicLayout from '@/layouts/public-layout';
@@ -46,7 +47,7 @@ export default function Contact() {
 
     return (
         <PublicLayout>
-            <Head title={t.nav_contact ?? 'Контакты'} />
+            <SeoHead title={t.nav_contact ?? 'Контакты'} />
 
             <PageHero
                 title={t.nav_contact ?? 'Контакты'}

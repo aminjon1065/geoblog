@@ -24,7 +24,9 @@ Route::prefix('{locale}')
         Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
         Route::get('/services/{slug}', [ServiceController::class, 'show'])->name('services.show');
         Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
-        Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+        Route::post('/contact', [ContactController::class, 'store'])
+            ->middleware('throttle:contact-form')
+            ->name('contact.store');
         Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
     });
 

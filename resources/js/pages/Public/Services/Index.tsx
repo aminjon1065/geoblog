@@ -1,7 +1,8 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import type { SharedData } from '@/types';
@@ -23,15 +24,13 @@ export default function ServicesIndex() {
 
     return (
         <PublicLayout>
-            <Head title={t.nav_services ?? 'Услуги'}>
-                <meta
-                    name="description"
-                    content={
-                        t.services_description ??
-                        'Услуги Ассоциации Геологов Таджикистана'
-                    }
-                />
-            </Head>
+            <SeoHead
+                title={t.nav_services ?? 'Услуги'}
+                description={
+                    t.services_description ??
+                    'Услуги Ассоциации Геологов Таджикистана'
+                }
+            />
 
             <PageHero
                 title={t.nav_services ?? 'Услуги'}

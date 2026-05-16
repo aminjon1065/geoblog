@@ -2,10 +2,9 @@
 
 use App\Models\Locale;
 use App\Models\Service;
-use App\Models\User;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = userWithRole('admin');
     $this->actingAs($this->user);
 
     Locale::firstOrCreate(['code' => 'ru'], [
@@ -92,5 +91,5 @@ test('authenticated user can delete a service', function () {
     $this->delete(route('admin.services.destroy', $service))
         ->assertRedirect(route('admin.services.index'));
 
-    $this->assertDatabaseMissing('services', ['id' => $service->id]);
+    $this->assertSoftDeleted('services', ['id' => $service->id]);
 });

@@ -16,12 +16,13 @@
       "mcp__laravel-boost__tinker",
       "mcp__laravel-boost__search-docs",
       "Bash(npm install:*)",
-      "WebFetch(domain:www.psm.com.au)"
+      "WebFetch(domain:www.psm.com.au)",
+      "Bash(xargs ls -la)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "laravel-boost",
     "herd"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

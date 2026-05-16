@@ -3,12 +3,13 @@ import {
     Briefcase,
     FileText,
     FolderOpen,
+    GlobeIcon,
+    History,
     Image,
     Inbox,
-    LayoutGrid,
     Layers,
+    LayoutGrid,
     Tag,
-    GlobeIcon,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -22,6 +23,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermissions } from '@/hooks/use-permissions';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 import AppLogo from './app-logo';
@@ -36,36 +38,49 @@ const mainNavItems: NavItem[] = [
         title: 'Посты',
         href: '/admin/posts',
         icon: FileText,
+        permission: 'posts.viewAny',
     },
     {
         title: 'Категории',
         href: '/admin/categories',
         icon: FolderOpen,
+        permission: 'categories.viewAny',
     },
     {
         title: 'Теги',
         href: '/admin/tags',
         icon: Tag,
+        permission: 'tags.viewAny',
     },
     {
         title: 'Услуги',
         href: '/admin/services',
         icon: Briefcase,
+        permission: 'services.viewAny',
     },
     {
         title: 'Страницы',
         href: '/admin/pages',
         icon: Layers,
+        permission: 'pages.viewAny',
     },
     {
         title: 'Медиа',
         href: '/admin/media',
         icon: Image,
+        permission: 'media.viewAny',
     },
     {
         title: 'Заявки',
         href: '/admin/contact-requests',
         icon: Inbox,
+        permission: 'contact-requests.viewAny',
+    },
+    {
+        title: 'Аудит',
+        href: '/admin/audit',
+        icon: History,
+        permission: 'audit.viewAny',
     },
 ];
 
@@ -78,6 +93,9 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { can } = usePermissions();
+    const visibleNavItems = mainNavItems.filter((item) => can(item.permission));
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -93,7 +111,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={visibleNavItems} />
             </SidebarContent>
 
             <SidebarFooter>

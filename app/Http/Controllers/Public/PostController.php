@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Support\Seo\SeoBuilder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -82,7 +83,7 @@ class PostController extends Controller
     /**
      * Просмотр одной новости
      */
-    public function show(string $locale, string $slug): \Inertia\Response
+    public function show(Request $request, string $locale, string $slug): \Inertia\Response
     {
         $post = Post::query()
             ->published()
@@ -106,6 +107,7 @@ class PostController extends Controller
                 'meta' => [
                     'title' => $post->translation?->meta_title ?? $post->translation?->title,
                     'description' => $post->translation?->meta_description ?? $post->translation?->excerpt,
+                    'image' => SeoBuilder::defaultImage($request),
                 ],
                 'author' => $post->author?->name,
                 'categories' => $post->categories->map(fn ($cat) => [
@@ -117,6 +119,7 @@ class PostController extends Controller
                     'name' => $tag->translation?->name,
                 ]),
             ],
+            'structuredData' => SeoBuilder::articleStructuredData($post, $request),
         ]);
     }
 }

@@ -1,7 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { ConfirmButton } from '@/components/admin/confirm-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -29,10 +31,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function ServicesIndex({ services }: Props) {
+    const { can } = usePermissions();
+    const canCreate = can('services.create');
+    const canUpdate = can('services.update');
+    const canDelete = can('services.delete');
+
     function handleDelete(id: number) {
-        if (confirm('Are you sure you want to delete this service?')) {
-            router.delete(`/admin/services/${id}`);
-        }
+        router.delete(`/admin/services/${id}`, { preserveScroll: true });
     }
 
     return (
@@ -44,9 +49,11 @@ export default function ServicesIndex({ services }: Props) {
                         title="Services"
                         description="Manage your services catalog"
                     />
-                    <Button asChild>
-                        <Link href="/admin/services/create">New Service</Link>
-                    </Button>
+                    {canCreate && (
+                        <Button asChild>
+                            <Link href="/admin/services/create">New Service</Link>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border">
@@ -106,26 +113,24 @@ export default function ServicesIndex({ services }: Props) {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`/admin/services/${service.id}/edit`}
+                                            {canUpdate && (
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link
+                                                        href={`/admin/services/${service.id}/edit`}
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <ConfirmButton
+                                                    title="Delete service?"
+                                                    description={`"${service.translations[0]?.title ?? service.slug}" will be permanently removed.`}
+                                                    onConfirm={() => handleDelete(service.id)}
                                                 >
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleDelete(service.id)
-                                                }
-                                            >
-                                                Delete
-                                            </Button>
+                                                    Delete
+                                                </ConfirmButton>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

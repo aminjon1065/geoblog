@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use App\Models\Page;
 use App\Models\Post;
+use App\Support\Seo\SeoBuilder;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PageController extends Controller
 {
-    public function home(string $locale): Response
+    public function home(Request $request, string $locale): Response
     {
         return Inertia::render('Public/Home', [
             'latestNews' => Post::published()
@@ -26,6 +28,8 @@ class PageController extends Controller
                     'title' => $p->translation?->title,
                     'excerpt' => $p->translation?->excerpt,
                 ]),
+            'structuredData' => [SeoBuilder::organizationStructuredData($request)],
+            'ogImage' => SeoBuilder::defaultImage($request),
         ]);
     }
 

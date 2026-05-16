@@ -7,8 +7,7 @@
         <meta name="author" content="{{ config('app.name') }}">
 
         <meta property="og:site_name" content="{{ config('app.name') }}">
-        <meta property="og:locale" content="{{ app()->getLocale() }}">
-        <meta property="og:type" content="website">
+        {{-- og:type / og:locale / canonical / hreflang are emitted per-page via <SeoHead>. --}}
 
         <style>
             html {
@@ -21,7 +20,6 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-        <link rel="canonical" href="{{ url()->current() }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|ibm-plex-mono:400,500" rel="stylesheet" />

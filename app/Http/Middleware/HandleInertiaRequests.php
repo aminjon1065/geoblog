@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
+use App\Support\Seo\SeoBuilder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,7 +41,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => fn () => $this->serializeUser($request->user()),
             ],
             'locale' => fn () => app()->getLocale(),
             'locales' => \App\Models\Locale::where('is_active', true)->orderBy('sort_order')->get(),
@@ -51,6 +53,33 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'seo' => fn () => SeoBuilder::forRequest($request),
+        ];
+    }
+
+    /**
+     * Explicit, allow-listed user shape. Adding columns to the users table must not
+     * silently leak to the frontend; surface them by editing this method.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function serializeUser(?User $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+            'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
+            'created_at' => $user->created_at?->toIso8601String(),
+            'updated_at' => $user->updated_at?->toIso8601String(),
+            'roles' => $user->getRoleNames()->all(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->all(),
+            'is_super_admin' => $user->isSuperAdmin(),
         ];
     }
 }

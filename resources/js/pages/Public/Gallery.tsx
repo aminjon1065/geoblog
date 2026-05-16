@@ -1,8 +1,9 @@
-import { Head, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import type { SharedData, MediaImage, PaginatedData } from '@/types';
 
@@ -16,7 +17,7 @@ export default function Gallery() {
     const [lightbox, setLightbox] = useState<string | null>(null);
     return (
         <PublicLayout>
-            <Head title={t.nav_gallery ?? 'Галерея'} />
+            <SeoHead title={t.nav_gallery ?? 'Галерея'} />
 
             <PageHero
                 title={t.nav_gallery ?? 'Галерея'}

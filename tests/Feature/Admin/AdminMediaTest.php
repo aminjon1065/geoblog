@@ -1,12 +1,11 @@
 <?php
 
 use App\Models\Media;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = userWithRole('admin');
     $this->actingAs($this->user);
     Storage::fake('public');
 });

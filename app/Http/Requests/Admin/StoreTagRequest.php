@@ -2,16 +2,14 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Tag;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTagRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Tag::class) ?? false;
     }
 
     /**

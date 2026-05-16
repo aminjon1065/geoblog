@@ -1,7 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { ConfirmButton } from '@/components/admin/confirm-button';
+import { Pagination, type PaginatedShape } from '@/components/admin/pagination';
+import { SearchBar } from '@/components/admin/search-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -15,17 +19,16 @@ interface ContactRequest {
     created_at: string;
 }
 
-interface PaginatedRequests {
+interface PaginatedRequests extends PaginatedShape {
     data: ContactRequest[];
-    current_page: number;
-    last_page: number;
-    total: number;
-    next_page_url: string | null;
-    prev_page_url: string | null;
 }
 
 interface Props {
     requests: PaginatedRequests;
+    filters: {
+        search: string | null;
+        status: 'read' | 'unread' | null;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -33,11 +36,12 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Contact Requests', href: '/admin/contact-requests' },
 ];
 
-export default function ContactRequestsIndex({ requests }: Props) {
+export default function ContactRequestsIndex({ requests, filters }: Props) {
+    const { can } = usePermissions();
+    const canDelete = can('contact-requests.delete');
+
     function handleDelete(id: number) {
-        if (confirm('Are you sure you want to delete this request?')) {
-            router.delete(`/admin/contact-requests/${id}`);
-        }
+        router.delete(`/admin/contact-requests/${id}`, { preserveScroll: true });
     }
 
     return (
@@ -49,33 +53,37 @@ export default function ContactRequestsIndex({ requests }: Props) {
                     description="Manage incoming contact form submissions"
                 />
 
+                <SearchBar
+                    url="/admin/contact-requests"
+                    search={filters.search}
+                    placeholder="Search name, email, or message…"
+                    selects={[
+                        {
+                            name: 'status',
+                            label: 'Status',
+                            value: filters.status ?? '',
+                            options: [
+                                { value: 'unread', label: 'Unread' },
+                                { value: 'read', label: 'Read' },
+                            ],
+                        },
+                    ]}
+                />
+
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="w-full text-sm">
                         <thead className="border-b bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Name
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Email
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Status
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Date
-                                </th>
-                                <th className="px-4 py-3 text-right font-medium">
-                                    Actions
-                                </th>
+                                <th className="px-4 py-3 text-left font-medium">Name</th>
+                                <th className="px-4 py-3 text-left font-medium">Email</th>
+                                <th className="px-4 py-3 text-left font-medium">Status</th>
+                                <th className="px-4 py-3 text-left font-medium">Date</th>
+                                <th className="px-4 py-3 text-right font-medium">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {requests.data.map((req) => (
-                                <tr
-                                    key={req.id}
-                                    className="border-b last:border-0"
-                                >
+                                <tr key={req.id} className="border-b last:border-0">
                                     <td className="px-4 py-3">
                                         <Link
                                             href={`/admin/contact-requests/${req.id}`}
@@ -88,43 +96,29 @@ export default function ContactRequestsIndex({ requests }: Props) {
                                         {req.email}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Badge
-                                            variant={
-                                                req.is_read
-                                                    ? 'secondary'
-                                                    : 'default'
-                                            }
-                                        >
+                                        <Badge variant={req.is_read ? 'secondary' : 'default'}>
                                             {req.is_read ? 'Read' : 'New'}
                                         </Badge>
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
-                                        {new Date(
-                                            req.created_at,
-                                        ).toLocaleDateString()}
+                                        {new Date(req.created_at).toLocaleDateString()}
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`/admin/contact-requests/${req.id}`}
-                                                >
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={`/admin/contact-requests/${req.id}`}>
                                                     View
                                                 </Link>
                                             </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleDelete(req.id)
-                                                }
-                                            >
-                                                Delete
-                                            </Button>
+                                            {canDelete && (
+                                                <ConfirmButton
+                                                    title="Delete request?"
+                                                    description={`Submission from ${req.name} (${req.email}) will be permanently removed.`}
+                                                    onConfirm={() => handleDelete(req.id)}
+                                                >
+                                                    Delete
+                                                </ConfirmButton>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -143,30 +137,7 @@ export default function ContactRequestsIndex({ requests }: Props) {
                     </table>
                 </div>
 
-                {requests.last_page > 1 && (
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            Page {requests.current_page} of {requests.last_page}{' '}
-                            ({requests.total} total)
-                        </p>
-                        <div className="flex gap-2">
-                            {requests.prev_page_url && (
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={requests.prev_page_url}>
-                                        Previous
-                                    </Link>
-                                </Button>
-                            )}
-                            {requests.next_page_url && (
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={requests.next_page_url}>
-                                        Next
-                                    </Link>
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                )}
+                <Pagination meta={requests} />
             </div>
         </AppLayout>
     );

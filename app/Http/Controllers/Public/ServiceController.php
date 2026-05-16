@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Service;
+use App\Support\Seo\SeoBuilder;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,7 +31,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    public function show(string $locale, string $slug): Response
+    public function show(Request $request, string $locale, string $slug): Response
     {
         $service = Service::query()
             ->where('slug', $slug)
@@ -37,6 +39,11 @@ class ServiceController extends Controller
             ->whereHas('translation')
             ->with(['translation', 'media'])
             ->firstOrFail();
+
+        $firstImagePath = $service->media->first()?->path;
+        $ogImage = $firstImagePath !== null
+            ? SeoBuilder::mediaUrl($firstImagePath)
+            : SeoBuilder::defaultImage($request);
 
         return Inertia::render('Public/Services/Show', [
             'service' => [
@@ -48,12 +55,14 @@ class ServiceController extends Controller
                 'meta' => [
                     'title' => $service->translation?->meta_title ?? $service->translation?->title,
                     'description' => $service->translation?->meta_description ?? $service->translation?->description,
+                    'image' => $ogImage,
                 ],
                 'images' => $service->media->map(fn ($m) => [
                     'id' => $m->id,
                     'path' => $m->path,
                 ]),
             ],
+            'structuredData' => SeoBuilder::serviceStructuredData($service, $request),
         ]);
     }
 }

@@ -2,10 +2,9 @@
 
 use App\Models\ContactRequest;
 use App\Models\Locale;
-use App\Models\User;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = userWithRole('admin');
     $this->actingAs($this->user);
 
     Locale::firstOrCreate(['code' => 'ru'], [
@@ -66,5 +65,5 @@ test('authenticated user can delete a contact request', function () {
     $this->delete(route('admin.contact-requests.destroy', $request))
         ->assertRedirect(route('admin.contact-requests.index'));
 
-    $this->assertDatabaseMissing('contact_requests', ['id' => $request->id]);
+    $this->assertSoftDeleted('contact_requests', ['id' => $request->id]);
 });

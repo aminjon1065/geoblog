@@ -9,19 +9,49 @@ use App\Models\Category;
 use App\Models\Locale;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Models\User;
+use App\Support\HtmlSanitizer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class PostController extends Controller
+class PostController extends Controller implements HasMiddleware
 {
-    public function index(): Response
+    public static function middleware(): array
     {
+        return [
+            new Middleware('can:viewAny,'.Post::class, only: ['index']),
+            new Middleware('can:create,'.Post::class, only: ['create', 'store']),
+            new Middleware('can:update,post', only: ['edit', 'update']),
+            new Middleware('can:delete,post', only: ['destroy']),
+        ];
+    }
+
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        $search = $request->string('search')->trim()->toString();
+        $status = $request->string('status')->trim()->toString();
+        $authorId = $request->integer('author');
+
         $posts = Post::query()
             ->with(['translation', 'author:id,name', 'categories.translation'])
+            ->when($search !== '', fn ($q) => $q->where(function ($query) use ($search) {
+                $query->where('slug', 'like', "%{$search}%")
+                    ->orWhereHas('translations', function ($t) use ($search) {
+                        $t->where('title', 'like', "%{$search}%")
+                            ->orWhere('excerpt', 'like', "%{$search}%");
+                    });
+            }))
+            ->when(in_array($status, ['draft', 'published'], true), fn ($q) => $q->where('status', $status))
+            ->when($authorId > 0, fn ($q) => $q->where('author_id', $authorId))
             ->latest()
             ->paginate(15)
+            ->withQueryString()
             ->through(fn (Post $post) => [
                 'id' => $post->id,
                 'slug' => $post->slug,
@@ -29,11 +59,25 @@ class PostController extends Controller
                 'published_at' => $post->published_at?->toDateString(),
                 'title' => $post->translation?->title,
                 'author' => $post->author?->name,
+                'author_id' => $post->author_id,
                 'categories' => $post->categories->map(fn ($c) => $c->translation?->name),
+                'can' => [
+                    'update' => $user?->can('update', $post) ?? false,
+                    'delete' => $user?->can('delete', $post) ?? false,
+                ],
             ]);
 
         return Inertia::render('Admin/Posts/Index', [
             'posts' => $posts,
+            'filters' => [
+                'search' => $search !== '' ? $search : null,
+                'status' => $status !== '' ? $status : null,
+                'author' => $authorId > 0 ? $authorId : null,
+            ],
+            'authors' => User::query()
+                ->whereHas('posts')
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
@@ -48,7 +92,12 @@ class PostController extends Controller
 
     public function store(StorePostRequest $request): RedirectResponse
     {
-        $translations = collect($request->validated('translations'))
+        $sanitized = HtmlSanitizer::cleanTranslations(
+            $request->validated('translations', []),
+            ['content'],
+        );
+
+        $translations = collect($sanitized)
             ->filter(fn (array $data) => ! empty($data['title']));
 
         $firstTitle = $translations->first()['title'];
@@ -113,7 +162,12 @@ class PostController extends Controller
 
     public function update(UpdatePostRequest $request, Post $post): RedirectResponse
     {
-        $translations = collect($request->validated('translations'))
+        $sanitized = HtmlSanitizer::cleanTranslations(
+            $request->validated('translations', []),
+            ['content'],
+        );
+
+        $translations = collect($sanitized)
             ->filter(fn (array $data) => ! empty($data['title']));
 
         $firstTitle = $translations->first()['title'];

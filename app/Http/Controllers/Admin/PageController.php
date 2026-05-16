@@ -6,12 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePageRequest;
 use App\Models\Locale;
 use App\Models\Page;
+use App\Support\HtmlSanitizer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class PageController extends Controller
+class PageController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:viewAny,'.Page::class, only: ['index']),
+            new Middleware('can:update,page', only: ['edit', 'update']),
+        ];
+    }
+
     public function index(): Response
     {
         return Inertia::render('Admin/Pages/Index', [
@@ -54,7 +65,12 @@ class PageController extends Controller
             'is_active' => $request->validated('is_active', true),
         ]);
 
-        foreach ($request->validated('translations') as $locale => $data) {
+        $sanitized = HtmlSanitizer::cleanTranslations(
+            $request->validated('translations', []),
+            ['content'],
+        );
+
+        foreach ($sanitized as $locale => $data) {
             $page->translations()->updateOrCreate(
                 ['locale' => $locale],
                 $data,

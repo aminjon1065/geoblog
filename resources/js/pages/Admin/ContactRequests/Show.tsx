@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { ConfirmButton } from '@/components/admin/confirm-button';
 import { Button } from '@/components/ui/button';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -28,10 +30,11 @@ export default function ContactRequestShow({ contactRequest }: Props) {
         },
     ];
 
+    const { can } = usePermissions();
+    const canDelete = can('contact-requests.delete');
+
     function handleDelete() {
-        if (confirm('Are you sure you want to delete this request?')) {
-            router.delete(`/admin/contact-requests/${contactRequest.id}`);
-        }
+        router.delete(`/admin/contact-requests/${contactRequest.id}`);
     }
 
     return (
@@ -47,9 +50,16 @@ export default function ContactRequestShow({ contactRequest }: Props) {
                         <Button variant="outline" asChild>
                             <Link href="/admin/contact-requests">Back</Link>
                         </Button>
-                        <Button variant="destructive" onClick={handleDelete}>
-                            Delete
-                        </Button>
+                        {canDelete && (
+                            <ConfirmButton
+                                size="default"
+                                title="Delete request?"
+                                description={`Submission from ${contactRequest.name} will be permanently removed.`}
+                                onConfirm={handleDelete}
+                            >
+                                Delete
+                            </ConfirmButton>
+                        )}
                     </div>
                 </div>
 

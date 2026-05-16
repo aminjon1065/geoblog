@@ -8,11 +8,20 @@ use App\Models\ContactRequest;
 use App\Models\Post;
 use App\Models\Service;
 use App\Models\Tag;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class DashboardController extends Controller
+class DashboardController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:access-admin-panel'),
+        ];
+    }
+
     public function __invoke(): Response
     {
         return Inertia::render('dashboard', [

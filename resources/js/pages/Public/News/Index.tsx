@@ -1,7 +1,8 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import NewsCard from '@/components/public/NewsCard';
 import PageHero from '@/components/public/PageHero';
 import Section from '@/components/public/Section';
+import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import { cn } from '@/lib/utils';
@@ -45,7 +46,7 @@ export default function Index() {
 
     return (
         <PublicLayout>
-            <Head title={t.nav_news ?? 'Новости'} />
+            <SeoHead title={t.nav_news ?? 'Новости'} />
 
             <PageHero
                 title={t.nav_news ?? 'Новости'}

@@ -87,5 +87,16 @@ class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($throttleKey);
         });
+
+        // 5 contact submissions per minute per IP, plus a tighter per-(email+ip) lane to
+        // slow drive-by campaigns that iterate through fake addresses.
+        RateLimiter::for('contact-form', function (Request $request) {
+            $email = Str::lower((string) $request->input('email'));
+
+            return [
+                Limit::perMinute(5)->by('contact-ip:'.$request->ip()),
+                Limit::perMinute(3)->by('contact-email:'.$email.'|'.$request->ip()),
+            ];
+        });
     }
 }

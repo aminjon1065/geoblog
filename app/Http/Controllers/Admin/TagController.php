@@ -8,11 +8,23 @@ use App\Http\Requests\Admin\UpdateTagRequest;
 use App\Models\Locale;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class TagController extends Controller
+class TagController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:viewAny,'.Tag::class, only: ['index']),
+            new Middleware('can:create,'.Tag::class, only: ['create', 'store']),
+            new Middleware('can:update,tag', only: ['edit', 'update']),
+            new Middleware('can:delete,tag', only: ['destroy']),
+        ];
+    }
+
     public function index(): Response
     {
         return Inertia::render('Admin/Tags/Index', [

@@ -8,11 +8,23 @@ use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Models\Locale;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class CategoryController extends Controller
+class CategoryController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:viewAny,'.Category::class, only: ['index']),
+            new Middleware('can:create,'.Category::class, only: ['create', 'store']),
+            new Middleware('can:update,category', only: ['edit', 'update']),
+            new Middleware('can:delete,category', only: ['destroy']),
+        ];
+    }
+
     public function index(): Response
     {
         return Inertia::render('Admin/Categories/Index', [
