@@ -23,13 +23,13 @@ class MenuSeeder extends Seeder
      * }>
      */
     private const HEADER_ITEMS = [
-        ['path' => '/', 'labels' => ['ru' => 'Главная', 'en' => 'Home', 'tg' => 'Асосӣ']],
-        ['path' => '/about', 'labels' => ['ru' => 'О нас', 'en' => 'About', 'tg' => 'Дар бораи мо']],
-        ['path' => '/services', 'labels' => ['ru' => 'Услуги', 'en' => 'Services', 'tg' => 'Хидматрасонӣ']],
-        ['path' => '/news', 'labels' => ['ru' => 'Новости', 'en' => 'News', 'tg' => 'Хабарҳо']],
-        ['path' => '/projects', 'labels' => ['ru' => 'Проекты', 'en' => 'Projects', 'tg' => 'Лоиҳаҳо']],
-        ['path' => '/gallery', 'labels' => ['ru' => 'Галерея', 'en' => 'Gallery', 'tg' => 'Галерея']],
-        ['path' => '/members', 'labels' => ['ru' => 'Члены', 'en' => 'Members', 'tg' => 'Аъзо']],
+        ['path' => '/', 'labels' => ['ru' => 'Главная', 'en' => 'Home', 'tj' => 'Асосӣ']],
+        ['path' => '/about', 'labels' => ['ru' => 'О нас', 'en' => 'About', 'tj' => 'Дар бораи мо']],
+        ['path' => '/services', 'labels' => ['ru' => 'Услуги', 'en' => 'Services', 'tj' => 'Хидматрасонӣ']],
+        ['path' => '/news', 'labels' => ['ru' => 'Новости', 'en' => 'News', 'tj' => 'Хабарҳо']],
+        ['path' => '/projects', 'labels' => ['ru' => 'Проекты', 'en' => 'Projects', 'tj' => 'Лоиҳаҳо']],
+        ['path' => '/gallery', 'labels' => ['ru' => 'Галерея', 'en' => 'Gallery', 'tj' => 'Галерея']],
+        ['path' => '/members', 'labels' => ['ru' => 'Члены', 'en' => 'Members', 'tj' => 'Аъзо']],
     ];
 
     /**
@@ -39,13 +39,13 @@ class MenuSeeder extends Seeder
      * }>
      */
     private const FOOTER_ITEMS = [
-        ['path' => '/about', 'labels' => ['ru' => 'О нас', 'en' => 'About', 'tg' => 'Дар бораи мо']],
-        ['path' => '/news', 'labels' => ['ru' => 'Новости', 'en' => 'News', 'tg' => 'Хабарҳо']],
-        ['path' => '/services', 'labels' => ['ru' => 'Услуги', 'en' => 'Services', 'tg' => 'Хидматрасонӣ']],
-        ['path' => '/projects', 'labels' => ['ru' => 'Проекты', 'en' => 'Projects', 'tg' => 'Лоиҳаҳо']],
-        ['path' => '/gallery', 'labels' => ['ru' => 'Галерея', 'en' => 'Gallery', 'tg' => 'Галерея']],
-        ['path' => '/members', 'labels' => ['ru' => 'Члены', 'en' => 'Members', 'tg' => 'Аъзо']],
-        ['path' => '/contact', 'labels' => ['ru' => 'Контакты', 'en' => 'Contact', 'tg' => 'Тамос']],
+        ['path' => '/about', 'labels' => ['ru' => 'О нас', 'en' => 'About', 'tj' => 'Дар бораи мо']],
+        ['path' => '/news', 'labels' => ['ru' => 'Новости', 'en' => 'News', 'tj' => 'Хабарҳо']],
+        ['path' => '/services', 'labels' => ['ru' => 'Услуги', 'en' => 'Services', 'tj' => 'Хидматрасонӣ']],
+        ['path' => '/projects', 'labels' => ['ru' => 'Проекты', 'en' => 'Projects', 'tj' => 'Лоиҳаҳо']],
+        ['path' => '/gallery', 'labels' => ['ru' => 'Галерея', 'en' => 'Gallery', 'tj' => 'Галерея']],
+        ['path' => '/members', 'labels' => ['ru' => 'Члены', 'en' => 'Members', 'tj' => 'Аъзо']],
+        ['path' => '/contact', 'labels' => ['ru' => 'Контакты', 'en' => 'Contact', 'tj' => 'Тамос']],
     ];
 
     public function run(): void
