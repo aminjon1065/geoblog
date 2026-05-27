@@ -13,6 +13,7 @@ import type { SharedData, PostSummary } from '@/types';
 
 interface HomeProps extends SharedData {
     latestNews: PostSummary[];
+    featuredPosts?: PostSummary[];
     structuredData?: Record<string, unknown>[];
     ogImage?: string | null;
 }
@@ -24,7 +25,7 @@ interface Activity {
 }
 
 export default function Home() {
-    const { locale, translations, latestNews, structuredData, ogImage } =
+    const { locale, translations, latestNews, featuredPosts, structuredData, ogImage } =
         usePage<HomeProps>().props;
     const t = translations?.ui ?? {};
 
@@ -168,6 +169,20 @@ export default function Home() {
                     ))}
                 </div>
             </Section>
+
+            {/* Featured Posts (Phase 6) */}
+            {featuredPosts && featuredPosts.length > 0 && (
+                <Section
+                    title={t.featured_posts ?? 'Избранные публикации'}
+                    subtitle={t.featured_subtitle ?? 'Избранное'}
+                >
+                    <div className="stagger-children grid gap-5 md:grid-cols-3">
+                        {featuredPosts.map((post) => (
+                            <NewsCard key={post.id} post={post} />
+                        ))}
+                    </div>
+                </Section>
+            )}
 
             {/* Latest News */}
             {latestNews?.length > 0 && (

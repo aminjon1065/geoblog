@@ -22,6 +22,11 @@ class MediaPolicy
         return $user->hasPermissionTo('media.upload');
     }
 
+    public function update(User $user, Media $media): bool
+    {
+        return $user->hasPermissionTo('media.update');
+    }
+
     public function delete(User $user, Media $media): bool
     {
         return $user->hasPermissionTo('media.delete');

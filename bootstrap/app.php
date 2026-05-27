@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\HandleRedirects;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'setLocale' => SetLocale::class,
         ]);
+        // HandleRedirects runs globally (not bound to the `web` group) so it sees
+        // unmatched paths too. It does double duty in Phase 7: short-circuiting
+        // admin-defined redirects on the way in, and recording 404 responses on
+        // the way out for the not-found log.
+        $middleware->prepend(HandleRedirects::class);
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,

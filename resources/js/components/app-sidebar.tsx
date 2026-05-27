@@ -9,7 +9,13 @@ import {
     Inbox,
     Layers,
     LayoutGrid,
+    Menu as MenuIcon,
+    Route as RouteIcon,
+    SearchX,
+    Settings,
+    Shield,
     Tag,
+    Users,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -60,9 +66,21 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Страницы',
-        href: '/admin/pages',
+        href: '/admin/content-pages',
         icon: Layers,
         permission: 'pages.viewAny',
+    },
+    {
+        title: 'Системные страницы',
+        href: '/admin/pages',
+        icon: Layers,
+        permission: 'pages.update',
+    },
+    {
+        title: 'Меню',
+        href: '/admin/menus',
+        icon: MenuIcon,
+        permission: 'menus.viewAny',
     },
     {
         title: 'Медиа',
@@ -77,10 +95,40 @@ const mainNavItems: NavItem[] = [
         permission: 'contact-requests.viewAny',
     },
     {
+        title: 'Пользователи',
+        href: '/admin/users',
+        icon: Users,
+        permission: 'users.viewAny',
+    },
+    {
+        title: 'Роли',
+        href: '/admin/roles',
+        icon: Shield,
+        permission: 'roles.manage',
+    },
+    {
         title: 'Аудит',
         href: '/admin/audit',
         icon: History,
         permission: 'audit.viewAny',
+    },
+    {
+        title: 'Редиректы',
+        href: '/admin/redirects',
+        icon: RouteIcon,
+        permission: 'redirects.manage',
+    },
+    {
+        title: '404 Лог',
+        href: '/admin/not-found',
+        icon: SearchX,
+        permission: 'not-found.viewAny',
+    },
+    {
+        title: 'Настройки',
+        href: '/admin/settings',
+        icon: Settings,
+        permission: 'settings.viewAny',
     },
 ];
 

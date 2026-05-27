@@ -1,18 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PostResource;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Services\Content\RelatedPostsResolver;
 use App\Support\Seo\SeoBuilder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class PostController extends Controller
 {
-    public function index(Request $request): \Inertia\Response
+    public function __construct(private readonly RelatedPostsResolver $relatedResolver) {}
+
+    public function index(Request $request): Response
     {
         $query = Post::query()
             ->published()
@@ -35,23 +42,7 @@ class PostController extends Controller
             ->latest('published_at')
             ->paginate(10)
             ->withQueryString()
-            ->through(function (Post $post) {
-                return [
-                    'id' => $post->id,
-                    'slug' => $post->slug,
-                    'published_at' => $post->published_at?->toDateString(),
-                    'title' => $post->translation?->title,
-                    'excerpt' => $post->translation?->excerpt,
-                    'categories' => $post->categories->map(fn ($cat) => [
-                        'slug' => $cat->slug,
-                        'name' => $cat->translation?->name,
-                    ]),
-                    'tags' => $post->tags->map(fn ($tag) => [
-                        'slug' => $tag->slug,
-                        'name' => $tag->translation?->name,
-                    ]),
-                ];
-            });
+            ->through(fn (Post $post) => PostResource::forPublicCard($post));
 
         $tags = Tag::query()
             ->with('translation')
@@ -80,10 +71,7 @@ class PostController extends Controller
         ]);
     }
 
-    /**
-     * Просмотр одной новости
-     */
-    public function show(Request $request, string $locale, string $slug): \Inertia\Response
+    public function show(Request $request, string $locale, string $slug): Response
     {
         $post = Post::query()
             ->published()
@@ -94,31 +82,17 @@ class PostController extends Controller
                 'categories.translation',
                 'tags.translation',
                 'author:id,name',
+                'ogImage',
             ])
             ->firstOrFail();
 
+        $related = $this->relatedResolver->resolve($post, limit: 3)
+            ->map(fn (Post $p): array => PostResource::forPublicCard($p))
+            ->values();
+
         return Inertia::render('Public/News/Show', [
-            'post' => [
-                'id' => $post->id,
-                'slug' => $post->slug,
-                'published_at' => $post->published_at?->toDateString(),
-                'title' => $post->translation?->title,
-                'content' => $post->translation?->content,
-                'meta' => [
-                    'title' => $post->translation?->meta_title ?? $post->translation?->title,
-                    'description' => $post->translation?->meta_description ?? $post->translation?->excerpt,
-                    'image' => SeoBuilder::defaultImage($request),
-                ],
-                'author' => $post->author?->name,
-                'categories' => $post->categories->map(fn ($cat) => [
-                    'slug' => $cat->slug,
-                    'name' => $cat->translation?->name,
-                ]),
-                'tags' => $post->tags->map(fn ($tag) => [
-                    'slug' => $tag->slug,
-                    'name' => $tag->translation?->name,
-                ]),
-            ],
+            'post' => PostResource::forPublicShow($post, $request),
+            'related' => $related,
             'structuredData' => SeoBuilder::articleStructuredData($post, $request),
         ]);
     }

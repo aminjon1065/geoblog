@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { MapPin, Mail, Phone } from 'lucide-react';
 import logo from '@/assets/logo.webp';
 import { url } from '@/lib/url';
-import type { SharedData } from '@/types';
+import type { SharedData, PublicMenuItem } from '@/types';
 
 function FacebookIcon({ className }: { className?: string }) {
     return (
@@ -29,18 +29,26 @@ function TelegramIcon({ className }: { className?: string }) {
 }
 
 export default function Footer() {
-    const { locale, translations } = usePage<SharedData>().props;
+    const { locale, translations, menus } = usePage<SharedData>().props;
     const t = translations?.ui ?? {};
 
-    const navLinks = [
-        { label: t.nav_about ?? 'О нас', href: url('/about', locale) },
-        { label: t.nav_news ?? 'Новости', href: url('/news', locale) },
-        { label: t.nav_services ?? 'Услуги', href: url('/services', locale) },
-        { label: t.nav_projects ?? 'Проекты', href: url('/projects', locale) },
-        { label: t.nav_gallery ?? 'Галерея', href: url('/gallery', locale) },
-        { label: t.nav_members ?? 'Члены', href: url('/members', locale) },
-        { label: t.nav_contact ?? 'Контакты', href: url('/contact', locale) },
-    ];
+    const managedItems: PublicMenuItem[] | undefined = menus?.footer?.items;
+    const navLinks: { label: string; href: string; openInNewTab: boolean }[] =
+        managedItems && managedItems.length > 0
+            ? managedItems.map((item) => ({
+                  label: item.label,
+                  href: item.url,
+                  openInNewTab: item.open_in_new_tab,
+              }))
+            : [
+                  { label: t.nav_about ?? 'О нас', href: url('/about', locale), openInNewTab: false },
+                  { label: t.nav_news ?? 'Новости', href: url('/news', locale), openInNewTab: false },
+                  { label: t.nav_services ?? 'Услуги', href: url('/services', locale), openInNewTab: false },
+                  { label: t.nav_projects ?? 'Проекты', href: url('/projects', locale), openInNewTab: false },
+                  { label: t.nav_gallery ?? 'Галерея', href: url('/gallery', locale), openInNewTab: false },
+                  { label: t.nav_members ?? 'Члены', href: url('/members', locale), openInNewTab: false },
+                  { label: t.nav_contact ?? 'Контакты', href: url('/contact', locale), openInNewTab: false },
+              ];
 
     const socialLinks = [
         {
@@ -106,15 +114,27 @@ export default function Footer() {
                             {t.nav_links ?? 'Навигация'}
                         </h4>
                         <nav className="flex flex-col gap-2 text-sm">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className="text-foreground/70 transition-colors hover:text-primary"
-                                >
-                                    {link.label}
-                                </Link>
-                            ))}
+                            {navLinks.map((link) =>
+                                link.openInNewTab ? (
+                                    <a
+                                        key={link.href}
+                                        href={link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-foreground/70 transition-colors hover:text-primary"
+                                    >
+                                        {link.label}
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        className="text-foreground/70 transition-colors hover:text-primary"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ),
+                            )}
                         </nav>
                     </div>
 

@@ -13,6 +13,8 @@ interface PostRow {
     id: number;
     slug: string;
     status: string;
+    is_featured: boolean;
+    is_scheduled: boolean;
     published_at: string | null;
     title: string | null;
     author: string | null;
@@ -127,7 +129,19 @@ export default function PostsIndex({ posts, filters, authors }: Props) {
                                         {post.author ?? '—'}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <GetStatusBadge status={post.status} />
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <GetStatusBadge status={post.status} />
+                                            {post.is_scheduled && (
+                                                <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    scheduled
+                                                </span>
+                                            )}
+                                            {post.is_featured && (
+                                                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                                    featured
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground">
                                         {post.published_at

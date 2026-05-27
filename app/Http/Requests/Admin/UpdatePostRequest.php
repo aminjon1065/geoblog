@@ -20,6 +20,8 @@ class UpdatePostRequest extends FormRequest
     {
         return [
             'status' => ['required', 'in:draft,published'],
+            'is_featured' => ['nullable', 'boolean'],
+            'og_image_id' => ['nullable', 'integer', 'exists:media,id'],
             'published_at' => ['nullable', 'date'],
             'translations' => ['required', 'array'],
             'translations.*.title' => ['nullable', 'string', 'max:255'],

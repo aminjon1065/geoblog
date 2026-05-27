@@ -5,6 +5,7 @@ namespace App\Support\Seo;
 use App\Models\Locale;
 use App\Models\Post;
 use App\Models\Service;
+use App\Services\Settings\SettingsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -125,6 +126,13 @@ class SeoBuilder
             ];
         }
 
+        // Prefer the per-post og_image (Phase 6) when set; fall back to the site
+        // default so every article still ships an image in its structured data.
+        $image = \App\Http\Resources\PostResource::ogImageUrl($post) ?? self::defaultImage($request);
+        if ($image !== null) {
+            $article['image'] = $image;
+        }
+
         $breadcrumb = self::breadcrumbList([
             ['name' => 'Home', 'url' => $request->getSchemeAndHttpHost().'/'.app()->getLocale()],
             ['name' => 'News', 'url' => $request->getSchemeAndHttpHost().'/'.app()->getLocale().'/news'],
@@ -185,7 +193,8 @@ class SeoBuilder
      */
     private static function organizationNode(Request $request): array
     {
-        $name = config('app.name');
+        $settings = app(SettingsRepository::class);
+        $name = (string) ($settings->get('site_name') ?: config('app.name'));
         $url = $request->getSchemeAndHttpHost().'/'.app()->getLocale();
         $logo = self::defaultImage($request);
 

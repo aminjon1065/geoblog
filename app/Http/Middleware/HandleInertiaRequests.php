@@ -3,6 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\Menu\MenuCache;
+use App\Services\Notifications\NotificationService;
+use App\Services\Settings\SettingsRepository;
 use App\Support\Seo\SeoBuilder;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -37,9 +40,14 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $settings = app(SettingsRepository::class);
+
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            // Backed by the settings repository so an admin can change the displayed
+            // site name without a deploy. Falls back to config('app.name') if no row
+            // exists yet — keeps things working pre-seed.
+            'name' => fn () => (string) ($settings->get('site_name') ?: config('app.name')),
             'auth' => [
                 'user' => fn () => $this->serializeUser($request->user()),
             ],
@@ -54,7 +62,27 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'seo' => fn () => SeoBuilder::forRequest($request),
+            // Only catalog-flagged-public settings — secrets never reach the wire.
+            'settings' => fn () => $settings->public(),
+            // Slug-keyed menus with URLs already resolved for the active locale; the
+            // public Header/Footer components consume this directly.
+            'menus' => fn () => $this->serializeMenus(),
+            // Unread notifications count for the admin bell. Skipped when the request
+            // is unauthenticated to avoid querying activity_log for guest visits.
+            'notifications' => fn () => $request->user() !== null
+                ? ['unread' => app(NotificationService::class)->unreadCount($request->user())]
+                : ['unread' => 0],
         ];
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function serializeMenus(): array
+    {
+        // Phase 9 optimization: cache the resolved tree per locale. Menu writes
+        // invalidate the cache via MenuService / MenuItemService → MenuCache::flush.
+        return app(MenuCache::class)->get(app()->getLocale());
     }
 
     /**
@@ -69,6 +97,16 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
+        $isSuperAdmin = $user->isSuperAdmin();
+
+        // Phase 9 optimization: super_admin authorises via Gate::before regardless of
+        // the per-permission map, so enumerating all permissions every request just to
+        // ship them to the frontend is wasted work (3 relation loads via Spatie). The
+        // React `usePermissions()` hook already short-circuits on `is_super_admin`.
+        $permissions = $isSuperAdmin
+            ? []
+            : $user->getAllPermissions()->pluck('name')->all();
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -78,8 +116,8 @@ class HandleInertiaRequests extends Middleware
             'created_at' => $user->created_at?->toIso8601String(),
             'updated_at' => $user->updated_at?->toIso8601String(),
             'roles' => $user->getRoleNames()->all(),
-            'permissions' => $user->getAllPermissions()->pluck('name')->all(),
-            'is_super_admin' => $user->isSuperAdmin(),
+            'permissions' => $permissions,
+            'is_super_admin' => $isSuperAdmin,
         ];
     }
 }

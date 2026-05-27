@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
+use App\Cms\Widgets\Widget;
+use App\Cms\Widgets\WidgetRegistry;
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Models\ContactRequest;
-use App\Models\Post;
-use App\Models\Service;
-use App\Models\Tag;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller implements HasMiddleware
 {
+    public function __construct(private readonly WidgetRegistry $widgets) {}
+
     public static function middleware(): array
     {
         return [
@@ -22,41 +25,38 @@ class DashboardController extends Controller implements HasMiddleware
         ];
     }
 
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
+        $user = $request->user();
+
+        // Resolve widgets the viewer can see, in registration order. Each widget's
+        // `data()` runs server-side so the frontend just dispatches by `component`
+        // and renders the payload.
+        $widgets = [];
+        foreach ($this->widgets->all() as $widget) {
+            $permission = $widget->permission();
+            if ($permission !== null && ! Gate::forUser($user)->check($permission)) {
+                continue;
+            }
+
+            $widgets[] = $this->serialize($widget, $user);
+        }
+
         return Inertia::render('dashboard', [
-            'stats' => [
-                'totalPosts' => Post::count(),
-                'publishedPosts' => Post::where('status', 'published')->count(),
-                'draftPosts' => Post::where('status', 'draft')->count(),
-                'totalCategories' => Category::count(),
-                'totalTags' => Tag::count(),
-                'totalServices' => Service::count(),
-                'unreadContacts' => ContactRequest::where('is_read', false)->count(),
-            ],
-            'recentPosts' => Post::query()
-                ->with(['translation', 'author:id,name'])
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(fn (Post $post) => [
-                    'id' => $post->id,
-                    'title' => $post->translation?->title ?? $post->slug,
-                    'status' => $post->status,
-                    'author' => $post->author?->name,
-                    'created_at' => $post->created_at->diffForHumans(),
-                ]),
-            'recentContacts' => ContactRequest::query()
-                ->latest()
-                ->limit(5)
-                ->get()
-                ->map(fn (ContactRequest $contact) => [
-                    'id' => $contact->id,
-                    'name' => $contact->name,
-                    'email' => $contact->email,
-                    'is_read' => $contact->is_read,
-                    'created_at' => $contact->created_at->diffForHumans(),
-                ]),
+            'widgets' => $widgets,
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serialize(Widget $widget, \App\Models\User $user): array
+    {
+        return [
+            'key' => $widget->key(),
+            'label' => $widget->label(),
+            'component' => $widget->component(),
+            'data' => $widget->data($user),
+        ];
     }
 }

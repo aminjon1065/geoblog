@@ -14,6 +14,7 @@ class PostTranslation extends Model
         'title',
         'excerpt',
         'content',
+        'reading_time_minutes',
         'meta_title',
         'meta_description',
     ];

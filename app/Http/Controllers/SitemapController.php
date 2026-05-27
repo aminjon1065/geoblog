@@ -92,6 +92,10 @@ class SitemapController extends Controller
 
         return response($xml, 200, [
             'Content-Type' => 'application/xml',
+            // Phase 9: keep the sitemap fresh-ish (one hour) without re-rendering on
+            // every crawler ping. Long enough to absorb bursty crawls; short enough
+            // that newly-published posts surface in a reasonable window.
+            'Cache-Control' => 'public, max-age=3600',
         ]);
     }
 

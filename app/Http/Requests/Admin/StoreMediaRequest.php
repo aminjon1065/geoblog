@@ -43,6 +43,9 @@ class StoreMediaRequest extends FormRequest
                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 ]),
             ],
+            // Optional: bind every uploaded file in this batch to a target folder.
+            // Null means "drop into root" — consistent with how media rows are stored.
+            'folder_id' => ['nullable', 'integer', 'exists:media_folders,id'],
         ];
     }
 

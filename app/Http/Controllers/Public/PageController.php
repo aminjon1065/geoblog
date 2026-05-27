@@ -27,6 +27,26 @@ class PageController extends Controller
                     'published_at' => $p->published_at?->toDateString(),
                     'title' => $p->translation?->title,
                     'excerpt' => $p->translation?->excerpt,
+                    'is_featured' => (bool) $p->is_featured,
+                    'reading_time' => $p->translation?->reading_time_minutes,
+                ]),
+            // Featured posts surface separately so the home page can promote them
+            // independent of the latest-news feed. Same shape as `latestNews` so the
+            // frontend doesn't need a second card component.
+            'featuredPosts' => Post::published()
+                ->featured()
+                ->with('translation')
+                ->latest('published_at')
+                ->limit(3)
+                ->get()
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'slug' => $p->slug,
+                    'published_at' => $p->published_at?->toDateString(),
+                    'title' => $p->translation?->title,
+                    'excerpt' => $p->translation?->excerpt,
+                    'is_featured' => true,
+                    'reading_time' => $p->translation?->reading_time_minutes,
                 ]),
             'structuredData' => [SeoBuilder::organizationStructuredData($request)],
             'ogImage' => SeoBuilder::defaultImage($request),

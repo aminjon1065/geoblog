@@ -37,10 +37,20 @@ export function SeoHead({
     structuredData,
     children,
 }: SeoHeadProps) {
-    const { seo } = usePage<SharedData>().props;
+    const { seo, settings } = usePage<SharedData>().props;
     const resolvedCanonical = canonical ?? seo?.canonical ?? null;
     const alternates = seo?.alternates ?? [];
     const locale = seo?.locale ?? null;
+
+    // Phase 7 — read SEO settings from shared props with no-op fallbacks. Page-specific
+    // values still win; settings only fill in when the consumer didn't pass anything.
+    const defaultMetaTitle = (settings?.seo_default_meta_title ?? '') as string;
+    const defaultMetaDescription = (settings?.seo_default_meta_description ?? '') as string;
+    const googleVerification = (settings?.seo_google_site_verification ?? '') as string;
+    const gaId = (settings?.seo_google_analytics_id ?? '') as string;
+
+    const effectiveTitle = title ?? (defaultMetaTitle !== '' ? defaultMetaTitle : null);
+    const effectiveDescription = description ?? (defaultMetaDescription !== '' ? defaultMetaDescription : null);
 
     const structuredArray: Record<string, unknown>[] = structuredData == null
         ? []
@@ -49,13 +59,15 @@ export function SeoHead({
             : [structuredData];
 
     return (
-        <Head title={title ?? undefined}>
-            {description && <meta name="description" content={description} />}
+        <Head title={effectiveTitle ?? undefined}>
+            {effectiveDescription && <meta name="description" content={effectiveDescription} />}
 
             {/* OpenGraph */}
             <meta property="og:type" content={ogType} />
-            {title && <meta property="og:title" content={title} />}
-            {description && <meta property="og:description" content={description} />}
+            {effectiveTitle && <meta property="og:title" content={effectiveTitle} />}
+            {effectiveDescription && (
+                <meta property="og:description" content={effectiveDescription} />
+            )}
             {resolvedCanonical && <meta property="og:url" content={resolvedCanonical} />}
             {locale && <meta property="og:locale" content={locale} />}
             {image && <meta property="og:image" content={image} />}
@@ -73,9 +85,33 @@ export function SeoHead({
 
             {/* Twitter Card */}
             <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
-            {title && <meta name="twitter:title" content={title} />}
-            {description && <meta name="twitter:description" content={description} />}
+            {effectiveTitle && <meta name="twitter:title" content={effectiveTitle} />}
+            {effectiveDescription && (
+                <meta name="twitter:description" content={effectiveDescription} />
+            )}
             {image && <meta name="twitter:image" content={image} />}
+
+            {/* Webmaster / verification (Phase 7) */}
+            {googleVerification !== '' && (
+                <meta name="google-site-verification" content={googleVerification} />
+            )}
+
+            {/* Google Analytics (Phase 7). Two tags emitted: the loader script and
+                the gtag config. Kept minimal — no consent UI yet. */}
+            {gaId !== '' && (
+                <script
+                    async
+                    src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+                />
+            )}
+            {gaId !== '' && (
+                <script
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{
+                        __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId.replace(/'/g, "\\'")}');`,
+                    }}
+                />
+            )}
 
             {/* Canonical */}
             {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}

@@ -1,19 +1,31 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Calendar, User } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, User } from 'lucide-react';
 import Section from '@/components/public/Section';
 import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
 import { url } from '@/lib/url';
 import type { SharedData, PostDetail, PostCategory, PostTag } from '@/types';
 
+interface RelatedPost {
+    id: number;
+    slug: string;
+    title: string | null;
+    excerpt: string | null;
+    published_at: string | null;
+    reading_time: number | null;
+}
+
 interface NewsShowProps extends SharedData {
-    post: PostDetail;
+    post: PostDetail & { reading_time?: number | null };
+    related?: RelatedPost[];
     structuredData?: Record<string, unknown>[];
 }
 
 export default function Show() {
-    const { post, locale, translations, structuredData } = usePage<NewsShowProps>().props;
+    const { post, locale, translations, structuredData, related } =
+        usePage<NewsShowProps>().props;
     const t = translations?.ui ?? {};
+    const readingTime = post?.reading_time ?? null;
 
     return (
         <PublicLayout>
@@ -52,6 +64,12 @@ export default function Show() {
                             <span className="flex items-center gap-1.5">
                                 <User className="h-4 w-4" />
                                 {post.author}
+                            </span>
+                        )}
+                        {readingTime !== null && readingTime !== undefined && (
+                            <span className="flex items-center gap-1.5">
+                                <Clock className="h-4 w-4" />
+                                {readingTime} {t.reading_time_unit ?? 'мин'}
                             </span>
                         )}
                     </div>
@@ -97,6 +115,45 @@ export default function Show() {
                         </div>
                     )}
                 </article>
+
+                {related && related.length > 0 && (
+                    <div className="mx-auto mt-16 max-w-5xl border-t border-border pt-10">
+                        <h2 className="mb-6 text-xl font-semibold">
+                            {t.related_news ?? 'Похожие новости'}
+                        </h2>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {related.map((item) => (
+                                <Link
+                                    key={item.id}
+                                    href={url(`/news/${item.slug}`, locale)}
+                                    className="group block rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                                >
+                                    {item.published_at && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {item.published_at}
+                                            {item.reading_time !== null &&
+                                                item.reading_time !== undefined && (
+                                                    <span>
+                                                        {' · '}
+                                                        {item.reading_time}{' '}
+                                                        {t.reading_time_unit ?? 'мин'}
+                                                    </span>
+                                                )}
+                                        </p>
+                                    )}
+                                    <h3 className="mt-1.5 line-clamp-2 font-semibold leading-snug group-hover:text-primary">
+                                        {item.title ?? item.slug}
+                                    </h3>
+                                    {item.excerpt && (
+                                        <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+                                            {item.excerpt}
+                                        </p>
+                                    )}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </Section>
         </PublicLayout>
     );

@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import logo from '@/assets/logo.webp';
 import { url } from '@/lib/url';
 import { cn } from '@/lib/utils';
-import type { SharedData, LocaleData } from '@/types';
+import type { SharedData, LocaleData, PublicMenuItem } from '@/types';
 
 export default function Header() {
-    const { locale, locales, translations } = usePage<SharedData>().props;
+    const { locale, locales, translations, menus } = usePage<SharedData>().props;
     const [open, setOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const currentUrl = usePage().url;
@@ -24,15 +24,25 @@ export default function Header() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const navItems = [
-        { label: t.nav_home ?? 'Главная', href: url('', locale) },
-        { label: t.nav_about ?? 'О нас', href: url('/about', locale) },
-        { label: t.nav_services ?? 'Услуги', href: url('/services', locale) },
-        { label: t.nav_news ?? 'Новости', href: url('/news', locale) },
-        { label: t.nav_projects ?? 'Проекты', href: url('/projects', locale) },
-        { label: t.nav_gallery ?? 'Галерея', href: url('/gallery', locale) },
-        { label: t.nav_members ?? 'Члены', href: url('/members', locale) },
-    ];
+    // Prefer the admin-managed `header` menu when populated; fall back to the
+    // legacy hardcoded list so a fresh DB (pre-MenuSeeder) still renders nav.
+    const managedItems: PublicMenuItem[] | undefined = menus?.header?.items;
+    const navItems: { label: string; href: string; openInNewTab: boolean }[] =
+        managedItems && managedItems.length > 0
+            ? managedItems.map((item) => ({
+                  label: item.label,
+                  href: item.url,
+                  openInNewTab: item.open_in_new_tab,
+              }))
+            : [
+                  { label: t.nav_home ?? 'Главная', href: url('', locale), openInNewTab: false },
+                  { label: t.nav_about ?? 'О нас', href: url('/about', locale), openInNewTab: false },
+                  { label: t.nav_services ?? 'Услуги', href: url('/services', locale), openInNewTab: false },
+                  { label: t.nav_news ?? 'Новости', href: url('/news', locale), openInNewTab: false },
+                  { label: t.nav_projects ?? 'Проекты', href: url('/projects', locale), openInNewTab: false },
+                  { label: t.nav_gallery ?? 'Галерея', href: url('/gallery', locale), openInNewTab: false },
+                  { label: t.nav_members ?? 'Члены', href: url('/members', locale), openInNewTab: false },
+              ];
 
     function localeSwitchUrl(targetLocale: string): string {
         if (currentUrl === '/' || currentUrl.match(/^\/[a-z]{2}$/)) {
@@ -78,24 +88,34 @@ export default function Header() {
                 </Link>
 
                 <nav className="hidden items-center gap-1 lg:flex">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                isActive(item.href)
-                                    ? scrolled
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'bg-primary-foreground/15 text-primary-foreground'
-                                    : scrolled
-                                      ? 'text-muted-foreground hover:text-foreground'
-                                      : 'text-primary-foreground/70 hover:text-primary-foreground',
-                            )}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
+                    {navItems.map((item) => {
+                        const className = cn(
+                            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                            isActive(item.href)
+                                ? scrolled
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-primary-foreground/15 text-primary-foreground'
+                                : scrolled
+                                  ? 'text-muted-foreground hover:text-foreground'
+                                  : 'text-primary-foreground/70 hover:text-primary-foreground',
+                        );
+
+                        return item.openInNewTab ? (
+                            <a
+                                key={item.href}
+                                href={item.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={className}
+                            >
+                                {item.label}
+                            </a>
+                        ) : (
+                            <Link key={item.href} href={item.href} className={className}>
+                                {item.label}
+                            </Link>
+                        );
+                    })}
                 </nav>
 
                 <div className="hidden items-center gap-3 lg:flex">
@@ -159,21 +179,36 @@ export default function Header() {
                 )}
             >
                 <div className="space-y-1 px-6 py-4">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setOpen(false)}
-                            className={cn(
-                                'block rounded-md px-3 py-2.5 text-sm font-medium transition',
-                                isActive(item.href)
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-foreground hover:bg-muted',
-                            )}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
+                    {navItems.map((item) => {
+                        const className = cn(
+                            'block rounded-md px-3 py-2.5 text-sm font-medium transition',
+                            isActive(item.href)
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-foreground hover:bg-muted',
+                        );
+
+                        return item.openInNewTab ? (
+                            <a
+                                key={item.href}
+                                href={item.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => setOpen(false)}
+                                className={className}
+                            >
+                                {item.label}
+                            </a>
+                        ) : (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setOpen(false)}
+                                className={className}
+                            >
+                                {item.label}
+                            </Link>
+                        );
+                    })}
 
                     <Link
                         href={url('/contact', locale)}

@@ -17,12 +17,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LocaleSeeder::class,
             RoleSeeder::class,
+            SettingsSeeder::class,
             AdminUserSeeder::class,
             CategorySeeder::class,
             TagSeeder::class,
             PostSeeder::class,
             PageSeeder::class,
             ServiceSeeder::class,
+            MenuSeeder::class,
         ]);
         //        User::factory()->create([
         //            'name' => 'Test User',

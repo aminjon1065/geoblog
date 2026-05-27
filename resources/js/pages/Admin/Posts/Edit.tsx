@@ -36,6 +36,7 @@ interface TranslationData {
     title: string;
     excerpt: string;
     content: string;
+    reading_time_minutes?: number | null;
     meta_title: string;
     meta_description: string;
 }
@@ -44,6 +45,8 @@ interface PostData {
     id: number;
     slug: string;
     status: string;
+    is_featured: boolean;
+    og_image_id: number | null;
     published_at: string | null;
     translations: Record<string, TranslationData>;
     category_ids: number[];
@@ -52,6 +55,8 @@ interface PostData {
 
 interface FormData {
     status: string;
+    is_featured: boolean;
+    og_image_id: number | null;
     published_at: string;
     translations: Record<string, TranslationData>;
     categories: number[];
@@ -87,6 +92,8 @@ export default function PostsEdit({ post, locales, categories, tags }: Props) {
 
     const { data, setData, put, processing, errors } = useForm<FormData>({
         status: post.status,
+        is_featured: post.is_featured ?? false,
+        og_image_id: post.og_image_id ?? null,
         published_at: post.published_at ?? '',
         translations: initialTranslations,
         categories: post.category_ids ?? [],
@@ -183,7 +190,58 @@ export default function PostsEdit({ post, locales, categories, tags }: Props) {
                                     setData('published_at', e.target.value)
                                 }
                             />
+                            <p className="text-xs text-muted-foreground">
+                                Set a future date to schedule publication.
+                            </p>
                             <InputError message={errors.published_at} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Checkbox
+                                    checked={data.is_featured}
+                                    onCheckedChange={(checked) =>
+                                        setData('is_featured', checked === true)
+                                    }
+                                />
+                                Featured post
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                                Featured posts surface on the home page above the
+                                latest-news feed.
+                            </p>
+                            <InputError message={errors.is_featured} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="og_image_id">OG image (Media ID)</Label>
+                            <Input
+                                id="og_image_id"
+                                type="number"
+                                min={1}
+                                value={data.og_image_id ?? ''}
+                                onChange={(e) =>
+                                    setData(
+                                        'og_image_id',
+                                        e.target.value === ''
+                                            ? null
+                                            : Number(e.target.value),
+                                    )
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Find the media ID in{' '}
+                                <Link
+                                    href="/admin/media"
+                                    className="underline"
+                                    target="_blank"
+                                >
+                                    Media Library
+                                </Link>
+                                .
+                            </p>
+                            <InputError message={errors.og_image_id} />
                         </div>
                     </div>
 

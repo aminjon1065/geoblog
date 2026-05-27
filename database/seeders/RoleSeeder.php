@@ -36,7 +36,9 @@ class RoleSeeder extends Seeder
         'tags.delete',
 
         'pages.viewAny',
+        'pages.create',
         'pages.update',
+        'pages.delete',
 
         'services.viewAny',
         'services.create',
@@ -45,7 +47,13 @@ class RoleSeeder extends Seeder
 
         'media.viewAny',
         'media.upload',
+        'media.update',
         'media.delete',
+
+        'media-folders.manage',
+
+        'menus.viewAny',
+        'menus.manage',
 
         'contact-requests.viewAny',
         'contact-requests.view',
@@ -56,6 +64,12 @@ class RoleSeeder extends Seeder
         'roles.manage',
 
         'audit.viewAny',
+
+        'settings.viewAny',
+        'settings.update',
+
+        'redirects.manage',
+        'not-found.viewAny',
     ];
 
     /**
@@ -70,26 +84,34 @@ class RoleSeeder extends Seeder
             'posts.viewAny', 'posts.create', 'posts.update', 'posts.delete', 'posts.publish',
             'categories.viewAny', 'categories.create', 'categories.update', 'categories.delete',
             'tags.viewAny', 'tags.create', 'tags.update', 'tags.delete',
-            'pages.viewAny', 'pages.update',
+            'pages.viewAny', 'pages.create', 'pages.update', 'pages.delete',
             'services.viewAny', 'services.create', 'services.update', 'services.delete',
-            'media.viewAny', 'media.upload', 'media.delete',
+            'media.viewAny', 'media.upload', 'media.update', 'media.delete',
+            'media-folders.manage',
+            'menus.viewAny', 'menus.manage',
             'contact-requests.viewAny', 'contact-requests.view', 'contact-requests.delete',
-            'users.viewAny',
+            'users.viewAny', 'users.manage',
             'audit.viewAny',
+            'settings.viewAny', 'settings.update',
+            'redirects.manage', 'not-found.viewAny',
+            // roles.manage is intentionally NOT granted — only super_admin (via
+            // Gate::before) may rewire the permission map of other roles.
         ],
         'editor' => [
             'admin-panel.access',
             'posts.viewAny', 'posts.create', 'posts.update', 'posts.delete', 'posts.publish',
             'categories.viewAny', 'categories.create', 'categories.update', 'categories.delete',
             'tags.viewAny', 'tags.create', 'tags.update', 'tags.delete',
-            'pages.viewAny', 'pages.update',
+            'pages.viewAny', 'pages.create', 'pages.update', 'pages.delete',
             'services.viewAny', 'services.create', 'services.update', 'services.delete',
-            'media.viewAny', 'media.upload', 'media.delete',
+            'media.viewAny', 'media.upload', 'media.update', 'media.delete',
+            'media-folders.manage',
+            'menus.viewAny', 'menus.manage',
         ],
         'author' => [
             'admin-panel.access',
             'posts.viewAny', 'posts.create', 'posts.update.own', 'posts.delete.own',
-            'media.viewAny', 'media.upload',
+            'media.viewAny', 'media.upload', 'media.update',
         ],
         'moderator' => [
             'admin-panel.access',
