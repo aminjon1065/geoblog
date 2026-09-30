@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\Post;
 use App\Support\Seo\SeoBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -83,11 +84,24 @@ class PageController extends Controller
         ]);
     }
 
+    /**
+     * Images from the media library. Only what the page shows leaves the
+     * server — not disks, original file names or folders.
+     */
     public function gallery(string $locale): Response
     {
-        $images = Media::where('mime_type', 'like', 'image/%')
+        $images = Media::query()
+            ->where('mime_type', 'like', 'image/%')
             ->latest()
-            ->paginate(24);
+            ->paginate(24)
+            ->through(fn (Media $media): array => [
+                'id' => $media->id,
+                'url' => Storage::disk($media->disk)->url($media->path),
+                'alt' => $media->alt,
+                'caption' => $media->caption,
+                'width' => $media->width,
+                'height' => $media->height,
+            ]);
 
         return Inertia::render('Public/Gallery', [
             'images' => $images,

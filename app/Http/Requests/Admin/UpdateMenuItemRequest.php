@@ -6,10 +6,9 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Menu;
 use App\Models\MenuItem;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Closure;
 
-class UpdateMenuItemRequest extends FormRequest
+class UpdateMenuItemRequest extends MenuItemFormRequest
 {
     public function authorize(): bool
     {
@@ -34,59 +33,20 @@ class UpdateMenuItemRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var Menu|null $menu */
-        $menu = $this->route('menu');
-        /** @var MenuItem|null $item */
         $item = $this->route('item');
 
         return [
             'parent_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('menu_items', 'id')
-                    ->where(fn ($q) => $q->where('menu_id', $menu?->id ?? 0)),
-                function ($attr, $value, $fail) use ($item) {
-                    if ($item !== null && (int) $value === $item->id) {
-                        $fail('A menu item cannot be its own parent.');
+                $this->parentInMenuRule(),
+                function (string $attribute, mixed $value, Closure $fail) use ($item): void {
+                    if ($item instanceof MenuItem && (int) $value === $item->id) {
+                        $fail('Пункт меню не может быть родителем самого себя.');
                     }
                 },
             ],
-            'link_type' => ['required', 'in:internal,external,page'],
-            'link_target' => ['nullable', 'string', 'max:512'],
-            'open_in_new_tab' => ['nullable', 'boolean'],
-
-            'translations' => ['required', 'array'],
-            'translations.*.label' => ['nullable', 'string', 'max:191'],
+            ...$this->sharedRules(),
         ];
-    }
-
-    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
-    {
-        $validator->after(function (\Illuminate\Contracts\Validation\Validator $validator): void {
-            $type = (string) $this->input('link_type');
-            $target = (string) $this->input('link_target', '');
-
-            if ($type === 'external' && $target !== '' && ! str_starts_with($target, 'http')) {
-                $validator->errors()->add('link_target', 'External links must be absolute URLs starting with http(s).');
-            }
-            if ($type === 'internal' && $target !== '' && $target[0] !== '/') {
-                $validator->errors()->add('link_target', 'Internal paths must start with /.');
-            }
-            if ($type === 'page' && $target !== '' && ! is_numeric($target)) {
-                $validator->errors()->add('link_target', 'Page link target must be a content page id.');
-            }
-
-            $translations = (array) $this->input('translations', []);
-            $hasLabel = false;
-            foreach ($translations as $data) {
-                if (! empty($data['label'])) {
-                    $hasLabel = true;
-                    break;
-                }
-            }
-            if (! $hasLabel) {
-                $validator->errors()->add('translations', 'At least one translation with a label is required.');
-            }
-        });
     }
 }

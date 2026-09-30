@@ -78,6 +78,24 @@ export default function Show() {
 
             <Section>
                 <article className="mx-auto max-w-3xl">
+                    {post?.cover && (
+                        <figure className="mb-8">
+                            <img
+                                src={post.cover.url}
+                                alt={post.cover.alt}
+                                width={post.cover.width ?? undefined}
+                                height={post.cover.height ?? undefined}
+                                className="h-auto w-full rounded-xl object-cover"
+                                fetchPriority="high"
+                            />
+                            {post.cover.caption && (
+                                <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+                                    {post.cover.caption}
+                                </figcaption>
+                            )}
+                        </figure>
+                    )}
+
                     {post?.categories?.length > 0 && (
                         <div className="mb-6 flex flex-wrap gap-2">
                             {post.categories.map((cat: PostCategory) => (
@@ -132,16 +150,18 @@ export default function Show() {
                                         <p className="text-xs text-muted-foreground">
                                             {item.published_at}
                                             {item.reading_time !== null &&
-                                                item.reading_time !== undefined && (
+                                                item.reading_time !==
+                                                    undefined && (
                                                     <span>
                                                         {' · '}
                                                         {item.reading_time}{' '}
-                                                        {t.reading_time_unit ?? 'мин'}
+                                                        {t.reading_time_unit ??
+                                                            'мин'}
                                                     </span>
                                                 )}
                                         </p>
                                     )}
-                                    <h3 className="mt-1.5 line-clamp-2 font-semibold leading-snug group-hover:text-primary">
+                                    <h3 className="mt-1.5 line-clamp-2 leading-snug font-semibold group-hover:text-primary">
                                         {item.title ?? item.slug}
                                     </h3>
                                     {item.excerpt && (

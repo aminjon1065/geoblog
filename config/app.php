@@ -82,6 +82,19 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Panel Locale
+    |--------------------------------------------------------------------------
+    |
+    | Language of every screen outside the localized public site: the admin
+    | panel, sign-in and account settings. Public pages pick their locale
+    | from the URL and override this.
+    |
+    */
+
+    'admin_locale' => env('APP_ADMIN_LOCALE', 'ru'),
+
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Cms\Widgets\Widget;
 use App\Cms\Widgets\WidgetRegistry;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -14,10 +15,18 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * «Консоль», the WordPress-style dashboard. Every admin-panel user reaches
+ * it; it shows the widgets the viewer may see, in registration order, each
+ * with its data resolved here — the frontend renders them by `component`.
+ */
 class DashboardController extends Controller implements HasMiddleware
 {
     public function __construct(private readonly WidgetRegistry $widgets) {}
 
+    /**
+     * @return list<Middleware>
+     */
     public static function middleware(): array
     {
         return [
@@ -27,30 +36,31 @@ class DashboardController extends Controller implements HasMiddleware
 
     public function __invoke(Request $request): Response
     {
+        /** @var User $user */
         $user = $request->user();
 
-        // Resolve widgets the viewer can see, in registration order. Each widget's
-        // `data()` runs server-side so the frontend just dispatches by `component`
-        // and renders the payload.
-        $widgets = [];
-        foreach ($this->widgets->all() as $widget) {
-            $permission = $widget->permission();
-            if ($permission !== null && ! Gate::forUser($user)->check($permission)) {
-                continue;
-            }
-
-            $widgets[] = $this->serialize($widget, $user);
-        }
+        $widgets = collect($this->widgets->all())
+            ->filter(fn (Widget $widget): bool => $this->isVisibleTo($widget, $user))
+            ->map(fn (Widget $widget): array => $this->serialize($widget, $user))
+            ->values()
+            ->all();
 
         return Inertia::render('dashboard', [
             'widgets' => $widgets,
         ]);
     }
 
+    private function isVisibleTo(Widget $widget, User $user): bool
+    {
+        $permission = $widget->permission();
+
+        return $permission === null || Gate::forUser($user)->check($permission);
+    }
+
     /**
-     * @return array<string, mixed>
+     * @return array{key: string, label: string, component: string, data: array<string, mixed>}
      */
-    private function serialize(Widget $widget, \App\Models\User $user): array
+    private function serialize(Widget $widget, User $user): array
     {
         return [
             'key' => $widget->key(),

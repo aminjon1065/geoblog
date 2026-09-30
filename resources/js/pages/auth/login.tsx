@@ -1,11 +1,14 @@
-import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { Form, Head, Link } from '@inertiajs/react';
+import {
+    LoginBox,
+    LoginErrors,
+    LoginField,
+    LoginMessage,
+    LoginNav,
+    LoginPasswordInput,
+    loginButtonClass,
+    loginInputClass,
+} from '@/layouts/auth/auth-simple-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
@@ -23,97 +26,78 @@ export default function Login({
     canRegister,
 }: Props) {
     return (
-        <AuthLayout
-            title="Log in to your account"
-            description="Enter your email and password below to log in"
-        >
-            <Head title="Log in" />
+        <AuthLayout title="Вход">
+            <Head title="Вход" />
 
-            <Form
-                {...store.form()}
-                resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
-            >
+            {status && <LoginMessage type="success">{status}</LoginMessage>}
+
+            <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
+                        <LoginErrors errors={errors} />
+
+                        <LoginBox>
+                            <LoginField id="email" label="E-mail">
+                                <input
                                     id="email"
                                     type="email"
                                     name="email"
+                                    className={loginInputClass}
                                     required
                                     autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
+                                    autoComplete="username"
+                                    aria-invalid={
+                                        Boolean(errors.email) || undefined
+                                    }
                                 />
-                                <InputError message={errors.email} />
-                            </div>
+                            </LoginField>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={request()}
-                                            className="ml-auto text-sm"
-                                            tabIndex={5}
-                                        >
-                                            Forgot password?
-                                        </TextLink>
-                                    )}
-                                </div>
-                                <Input
+                            <LoginField id="password" label="Пароль">
+                                <LoginPasswordInput
                                     id="password"
-                                    type="password"
                                     name="password"
                                     required
-                                    tabIndex={2}
                                     autoComplete="current-password"
-                                    placeholder="Password"
+                                    aria-invalid={
+                                        Boolean(errors.password) || undefined
+                                    }
                                 />
-                                <InputError message={errors.password} />
-                            </div>
+                            </LoginField>
 
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember">Remember me</Label>
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <label className="inline-flex items-center gap-1.5 text-[13px]">
+                                    <input
+                                        id="remember"
+                                        type="checkbox"
+                                        name="remember"
+                                        className="size-4 accent-[#2271b1]"
+                                    />
+                                    Запомнить меня
+                                </label>
+                                <button
+                                    type="submit"
+                                    className={loginButtonClass}
+                                    disabled={processing}
+                                    data-test="login-button"
+                                >
+                                    Войти
+                                </button>
                             </div>
-
-                            <Button
-                                type="submit"
-                                className="mt-4 w-full"
-                                tabIndex={4}
-                                disabled={processing}
-                                data-test="login-button"
-                            >
-                                {processing && <Spinner />}
-                                Log in
-                            </Button>
-                        </div>
-
-                        {canRegister && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                Don't have an account?{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    Sign up
-                                </TextLink>
-                            </div>
-                        )}
+                        </LoginBox>
                     </>
                 )}
             </Form>
 
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
+            {(canRegister || canResetPassword) && (
+                <LoginNav>
+                    {canRegister && <Link href={register()}>Регистрация</Link>}
+                    {canRegister && canResetPassword && (
+                        <span aria-hidden>|</span>
+                    )}
+                    {canResetPassword && (
+                        <Link href={request()}>Забыли пароль?</Link>
+                    )}
+                </LoginNav>
             )}
         </AuthLayout>
     );

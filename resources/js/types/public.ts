@@ -28,8 +28,18 @@ export type PostDetail = {
         image?: string | null;
     };
     author: string | null;
+    /** The featured image shown under the title (PostResource::cover). */
+    cover?: PostCover | null;
     categories: PostCategory[];
     tags: PostTag[];
+};
+
+export type PostCover = {
+    url: string;
+    alt: string;
+    caption: string | null;
+    width: number | null;
+    height: number | null;
 };
 
 export type PostListItem = PostSummary & {
@@ -43,11 +53,11 @@ export type PageData = {
 
 export type MediaImage = {
     id: number;
-    path: string;
     url: string;
-    mime_type: string;
-    size: number;
-    created_at: string;
+    alt: string | null;
+    caption: string | null;
+    width: number | null;
+    height: number | null;
 };
 
 export type PaginationLink = {

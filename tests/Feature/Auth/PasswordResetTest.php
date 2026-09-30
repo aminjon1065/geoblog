@@ -71,3 +71,42 @@ test('password cannot be reset with invalid token', function () {
 
     $response->assertSessionHasErrors('email');
 });
+
+test('the reset link status is shown in russian on the request screen', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->from(route('password.request'))
+        ->post(route('password.email'), ['email' => $user->email])
+        ->assertSessionHas('status', 'Ссылка на сброс пароля была отправлена.');
+
+    $this->get(route('password.request'))
+        ->assertInertia(fn ($page) => $page
+            ->component('auth/forgot-password')
+            ->where('status', 'Ссылка на сброс пароля была отправлена.'));
+});
+
+test('an unknown e-mail is reported in russian', function () {
+    $this->post(route('password.email'), ['email' => 'nobody@example.com'])
+        ->assertSessionHasErrors(['email' => 'Не удалось найти пользователя с указанным электронным адресом.']);
+});
+
+test('after a reset the login screen confirms it in russian', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->post(route('password.email'), ['email' => $user->email]);
+
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        $this->post(route('password.update'), [
+            'token' => $notification->token,
+            'email' => $user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertSessionHas('status', 'Ваш пароль был сброшен.');
+
+        return true;
+    });
+});

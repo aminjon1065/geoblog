@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Notifications\ActivityLabels;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Activitylog\Models\Activity;
@@ -45,11 +47,14 @@ class AuditLogController extends Controller implements HasMiddleware
             ->through(fn (Activity $activity) => [
                 'id' => $activity->id,
                 'log_name' => $activity->log_name,
+                'log_label' => ActivityLabels::log($activity->log_name),
                 'event' => $activity->event,
+                'event_label' => ActivityLabels::event($activity->event),
                 'description' => $activity->description,
                 'subject_type' => $activity->subject_type !== null
                     ? class_basename($activity->subject_type)
                     : null,
+                'subject_label' => ActivityLabels::subject($activity->subject_type),
                 'subject_id' => $activity->subject_id,
                 'causer' => $activity->causer
                     ? ['id' => $activity->causer->id, 'name' => $activity->causer->name, 'email' => $activity->causer->email]
@@ -65,8 +70,30 @@ class AuditLogController extends Controller implements HasMiddleware
                 'event' => $event !== '' ? $event : null,
                 'search' => $search !== '' ? $search : null,
             ],
-            'logNames' => Activity::query()->select('log_name')->distinct()->orderBy('log_name')->pluck('log_name'),
-            'events' => Activity::query()->select('event')->whereNotNull('event')->distinct()->orderBy('event')->pluck('event'),
+            'logNames' => $this->options(
+                Activity::query()->select('log_name')->whereNotNull('log_name')->distinct()->pluck('log_name'),
+                ActivityLabels::log(...),
+            ),
+            'events' => $this->options(
+                Activity::query()->select('event')->whereNotNull('event')->distinct()->pluck('event'),
+                ActivityLabels::event(...),
+            ),
         ]);
+    }
+
+    /**
+     * Filter options sorted by their Russian label.
+     *
+     * @param  Collection<int, string>  $values
+     * @param  callable(string): ?string  $label
+     * @return list<array{value: string, label: string}>
+     */
+    private function options(Collection $values, callable $label): array
+    {
+        return $values
+            ->map(fn (string $value): array => ['value' => $value, 'label' => (string) ($label($value) ?? $value)])
+            ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
+            ->all();
     }
 }

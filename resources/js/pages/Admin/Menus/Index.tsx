@@ -1,112 +1,131 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/admin/content/confirm-dialog';
+import { MENU_LOCATIONS } from '@/components/admin/menus/types';
+import {
+    RowAction,
+    RowActions,
+    TablePagination,
+} from '@/components/wp/list-table';
+import { PageHeader } from '@/components/wp/page-header';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { create, destroy, edit } from '@/routes/admin/menus';
 
-interface MenuRow {
+type MenuRow = {
     id: number;
     slug: string;
     name: string;
     items_count: number;
-}
+};
 
-interface Props {
-    menus: MenuRow[];
-}
+const COLUMNS = ['Название', 'Ярлык', 'Где показывается', 'Пунктов'];
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Menus', href: '/admin/menus' },
-];
-
-export default function MenusIndex({ menus }: Props) {
+export default function MenusIndex({ menus }: { menus: MenuRow[] }) {
     const { can } = usePermissions();
+    const { confirm, dialog } = useConfirmDialog();
     const canManage = can('menus.manage');
 
-    function handleDelete(id: number) {
-        router.delete(`/admin/menus/${id}`, { preserveScroll: true });
-    }
+    const askDelete = (menu: MenuRow) =>
+        confirm({
+            title: 'Удалить меню?',
+            description: `Меню «${menu.name}» и все его пункты будут удалены.`,
+            onConfirm: () =>
+                router.delete(destroy.url(menu.id), { preserveScroll: true }),
+        });
+
+    const meta = { current_page: 1, last_page: 1, total: menus.length };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Menus" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <Heading
-                        title="Menus"
-                        description="Build navigation menus that power the public Header and Footer."
-                    />
-                    {canManage && (
-                        <Button asChild>
-                            <Link href="/admin/menus/create">New Menu</Link>
-                        </Button>
-                    )}
-                </div>
+        <AppLayout>
+            <Head title="Меню" />
 
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-medium">Name</th>
-                                <th className="px-4 py-3 text-left font-medium">Slug</th>
-                                <th className="px-4 py-3 text-left font-medium">Items</th>
-                                <th className="px-4 py-3 text-right font-medium">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {menus.map((menu) => (
-                                <tr key={menu.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3 font-medium">
+            <PageHeader
+                title="Меню"
+                action={
+                    canManage
+                        ? { label: 'Добавить меню', href: create.url() }
+                        : null
+                }
+            />
+
+            <div className="tablenav">
+                <TablePagination meta={meta} />
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="wp-list-table">
+                    <thead>
+                        <tr>
+                            {COLUMNS.map((column, index) => (
+                                <th
+                                    key={column}
+                                    scope="col"
+                                    className={
+                                        index === 0
+                                            ? 'column-primary'
+                                            : undefined
+                                    }
+                                >
+                                    {column}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {menus.map((menu) => (
+                            <tr key={menu.id}>
+                                <td className="column-primary">
+                                    <strong>
                                         <Link
-                                            href={`/admin/menus/${menu.id}/edit`}
-                                            className="hover:underline"
+                                            href={edit.url(menu.id)}
+                                            className="row-title"
                                         >
                                             {menu.name}
                                         </Link>
-                                    </td>
-                                    <td className="px-4 py-3 font-mono text-muted-foreground">
-                                        {menu.slug}
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {menu.items_count}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/admin/menus/${menu.id}/edit`}>
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            {canManage && (
-                                                <ConfirmButton
-                                                    title="Delete menu?"
-                                                    description={`"${menu.name}" and all of its items will be removed.`}
-                                                    onConfirm={() => handleDelete(menu.id)}
+                                    </strong>
+                                    <RowActions>
+                                        <RowAction>
+                                            <Link
+                                                href={edit.url(menu.id)}
+                                                aria-label={`Изменить меню «${menu.name}»`}
+                                            >
+                                                Изменить
+                                            </Link>
+                                        </RowAction>
+                                        {canManage && (
+                                            <RowAction danger>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        askDelete(menu)
+                                                    }
+                                                    aria-label={`Удалить меню «${menu.name}»`}
                                                 >
-                                                    Delete
-                                                </ConfirmButton>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {menus.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={4}
-                                        className="px-4 py-8 text-center text-muted-foreground"
-                                    >
-                                        No menus yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                                    Удалить
+                                                </button>
+                                            </RowAction>
+                                        )}
+                                    </RowActions>
+                                </td>
+                                <td>
+                                    <code className="text-[12px]">
+                                        {menu.slug}
+                                    </code>
+                                </td>
+                                <td>{MENU_LOCATIONS[menu.slug] ?? '—'}</td>
+                                <td>{menu.items_count}</td>
+                            </tr>
+                        ))}
+                        {menus.length === 0 && (
+                            <tr className="no-items">
+                                <td colSpan={COLUMNS.length}>Меню пока нет.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
+
+            {dialog}
         </AppLayout>
     );
 }

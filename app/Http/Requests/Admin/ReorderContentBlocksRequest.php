@@ -35,4 +35,16 @@ class ReorderContentBlocksRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'order.required' => 'Не передан порядок блоков.',
+            'order.*.integer' => 'Неверный идентификатор блока.',
+            'order.*.exists' => 'Блок не найден на этой странице.',
+        ];
+    }
 }

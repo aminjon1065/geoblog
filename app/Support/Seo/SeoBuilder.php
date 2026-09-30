@@ -21,6 +21,14 @@ use Illuminate\Support\Facades\Storage;
 class SeoBuilder
 {
     /**
+     * Locale codes that are not language tags. The site keeps "tj" (the
+     * country code) in its URLs, but Tajik is "tg" for hreflang.
+     *
+     * @var array<string, string>
+     */
+    private const LANGUAGE_TAGS = ['tj' => 'tg'];
+
+    /**
      * @return array{
      *     canonical: string,
      *     locale: string,
@@ -40,6 +48,14 @@ class SeoBuilder
             'locale' => app()->getLocale(),
             'alternates' => self::alternates($request, $activeLocales),
         ];
+    }
+
+    /**
+     * The hreflang value for a site locale code.
+     */
+    public static function languageTag(string $locale): string
+    {
+        return self::LANGUAGE_TAGS[$locale] ?? $locale;
     }
 
     public static function canonical(Request $request): string
@@ -81,7 +97,7 @@ class SeoBuilder
             .($query !== null && $query !== '' ? '?'.$query : '');
 
         $alternates = array_map(
-            fn (string $locale): array => ['locale' => $locale, 'url' => $build($locale)],
+            fn (string $locale): array => ['locale' => self::languageTag($locale), 'url' => $build($locale)],
             $activeLocales,
         );
 

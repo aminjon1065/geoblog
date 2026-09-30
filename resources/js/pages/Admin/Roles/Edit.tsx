@@ -1,165 +1,207 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEvent } from 'react';
-import Heading from '@/components/heading';
+import type { FormEvent } from 'react';
+import { FormTable, SubmitButton } from '@/components/admin/form-table';
 import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Notice } from '@/components/wp/notice';
+import { PageHeader } from '@/components/wp/page-header';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { index, update } from '@/routes/admin/roles';
 
-interface PermissionGroup {
+type PermissionOption = {
+    name: string;
+    label: string;
+};
+
+type PermissionGroup = {
     group: string;
-    permissions: string[];
-}
+    label: string;
+    permissions: PermissionOption[];
+};
 
-interface RoleShape {
+type RoleShape = {
     id: number;
     name: string;
+    label: string;
+    description: string | null;
     is_super_admin: boolean;
     permissions: string[];
-}
+};
 
-interface Props {
+type Props = {
     role: RoleShape;
     permissionGroups: PermissionGroup[];
-}
+};
 
-interface FormData {
+type FormData = {
     permissions: string[];
-}
+};
 
 export default function RolesEdit({ role, permissionGroups }: Props) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Roles', href: '/admin/roles' },
-        { title: role.name, href: `/admin/roles/${role.id}/edit` },
-    ];
-
-    const { data, setData, put, processing, errors } = useForm<FormData>({
+    const { data, setData, submit, processing, errors } = useForm<FormData>({
         permissions: [...role.permissions],
     });
 
     const readOnly = role.is_super_admin;
 
-    function togglePermission(name: string, checked: boolean) {
-        if (readOnly) return;
-        const next = checked
-            ? Array.from(new Set([...data.permissions, name]))
-            : data.permissions.filter((p) => p !== name);
-        setData('permissions', next);
-    }
+    const togglePermission = (name: string, checked: boolean) => {
+        setData(
+            'permissions',
+            checked
+                ? Array.from(new Set([...data.permissions, name]))
+                : data.permissions.filter((permission) => permission !== name),
+        );
+    };
 
-    function toggleGroup(group: PermissionGroup, allOn: boolean) {
-        if (readOnly) return;
-        if (allOn) {
-            setData(
-                'permissions',
-                data.permissions.filter((p) => !group.permissions.includes(p)),
-            );
-        } else {
-            setData(
-                'permissions',
-                Array.from(new Set([...data.permissions, ...group.permissions])),
-            );
+    const toggleGroup = (group: PermissionGroup, select: boolean) => {
+        const names = group.permissions.map((permission) => permission.name);
+
+        setData(
+            'permissions',
+            select
+                ? Array.from(new Set([...data.permissions, ...names]))
+                : data.permissions.filter(
+                      (permission) => !names.includes(permission),
+                  ),
+        );
+    };
+
+    const onSubmit = (event: FormEvent) => {
+        event.preventDefault();
+
+        if (!readOnly) {
+            submit(update(role.id), { preserveScroll: true });
         }
-    }
+    };
 
-    function submit(e: FormEvent) {
-        e.preventDefault();
-        if (readOnly) return;
-        put(`/admin/roles/${role.id}`);
-    }
+    const permissionErrors = Object.entries(
+        errors as Record<string, string | undefined>,
+    )
+        .filter(([key]) => key.startsWith('permissions'))
+        .map(([, message]) => message);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit role: ${role.name}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading
-                    title={`Role: ${role.name}`}
-                    description={
-                        readOnly
-                            ? 'super_admin inherits every permission via Gate::before. Its row contents are ignored at runtime.'
-                            : 'Toggle individual permissions or whole groups. Saved changes take effect on the next request.'
-                    }
-                />
+        <AppLayout>
+            <Head title={`Роль «${role.label}»`} />
 
-                <form
-                    onSubmit={submit}
-                    className="max-w-4xl space-y-6 rounded-lg border bg-card p-6"
-                >
-                    <div className="space-y-4">
-                        {permissionGroups.map((group) => {
-                            const enabled = group.permissions.filter((p) =>
-                                data.permissions.includes(p),
-                            ).length;
-                            const allOn = enabled === group.permissions.length;
+            <PageHeader title={`Роль «${role.label}»`} />
+            {role.description && (
+                <p className="mt-1 text-[13px] text-[#50575e]">
+                    {role.description}
+                </p>
+            )}
 
-                            return (
-                                <div
-                                    key={group.group}
-                                    className="rounded-md border bg-background p-4"
-                                >
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <h3 className="font-medium capitalize">
-                                            {group.group}
-                                            <span className="ml-2 text-xs text-muted-foreground">
-                                                {enabled}/{group.permissions.length}
-                                            </span>
-                                        </h3>
-                                        {!readOnly && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => toggleGroup(group, allOn)}
-                                            >
-                                                {allOn ? 'Disable all' : 'Enable all'}
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                        {group.permissions.map((p) => (
-                                            <label
-                                                key={p}
-                                                className={`flex items-center gap-2 rounded p-2 text-sm ${
-                                                    readOnly
-                                                        ? 'cursor-not-allowed text-muted-foreground'
-                                                        : 'cursor-pointer hover:bg-muted/50'
-                                                }`}
-                                            >
-                                                <Checkbox
-                                                    checked={data.permissions.includes(p)}
-                                                    disabled={readOnly}
-                                                    onCheckedChange={(checked) =>
-                                                        togglePermission(
-                                                            p,
-                                                            checked === true,
-                                                        )
-                                                    }
-                                                />
-                                                <span className="font-mono">{p}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+            {readOnly && (
+                <Notice type="info" className="mt-3">
+                    <p>
+                        Суперадминистратор получает все права автоматически,
+                        поэтому его список прав не редактируется.
+                    </p>
+                </Notice>
+            )}
 
-                    <InputError message={errors.permissions} />
+            <form onSubmit={onSubmit}>
+                <FormTable>
+                    {permissionGroups.map((group) => {
+                        const names = group.permissions.map(
+                            (permission) => permission.name,
+                        );
+                        const enabled = names.filter((name) =>
+                            data.permissions.includes(name),
+                        ).length;
+                        const allSelected = enabled === names.length;
 
-                    {!readOnly && (
-                        <div className="flex items-center gap-3">
-                            <Button type="submit" disabled={processing}>
-                                Save permissions
-                            </Button>
-                            <Button variant="outline" asChild>
-                                <Link href="/admin/roles">Cancel</Link>
-                            </Button>
-                        </div>
-                    )}
-                </form>
-            </div>
+                        return (
+                            <tr key={group.group}>
+                                <th scope="row">
+                                    {group.label}
+                                    <span className="block text-[13px] font-normal text-[#646970]">
+                                        {readOnly
+                                            ? 'все'
+                                            : `${enabled} из ${names.length}`}
+                                    </span>
+                                </th>
+                                <td>
+                                    <fieldset>
+                                        <legend className="wp-screen-reader-text">
+                                            {group.label}
+                                        </legend>
+                                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                            {group.permissions.map(
+                                                (permission) => (
+                                                    <label
+                                                        key={permission.name}
+                                                        className="flex cursor-pointer items-start gap-2 text-[14px] text-[#1d2327] has-disabled:cursor-default"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="mt-0.5 size-4 shrink-0 accent-[#2271b1]"
+                                                            checked={
+                                                                readOnly ||
+                                                                data.permissions.includes(
+                                                                    permission.name,
+                                                                )
+                                                            }
+                                                            disabled={readOnly}
+                                                            onChange={(event) =>
+                                                                togglePermission(
+                                                                    permission.name,
+                                                                    event.target
+                                                                        .checked,
+                                                                )
+                                                            }
+                                                        />
+                                                        <span>
+                                                            {permission.label}
+                                                            <code className="block text-[12px] text-[#646970]">
+                                                                {
+                                                                    permission.name
+                                                                }
+                                                            </code>
+                                                        </span>
+                                                    </label>
+                                                ),
+                                            )}
+                                        </div>
+                                    </fieldset>
+                                    {!readOnly && names.length > 1 && (
+                                        <button
+                                            type="button"
+                                            className="wp-link-button mt-2 text-[13px]"
+                                            onClick={() =>
+                                                toggleGroup(group, !allSelected)
+                                            }
+                                        >
+                                            {allSelected
+                                                ? 'Снять все'
+                                                : 'Отметить все'}
+                                        </button>
+                                    )}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </FormTable>
+
+                {permissionErrors.map((message) => (
+                    <InputError
+                        key={message}
+                        message={message}
+                        className="text-[13px]"
+                    />
+                ))}
+
+                {readOnly ? (
+                    <p className="mt-5">
+                        <Link href={index.url()} className="wp-button">
+                            ← Вернуться к ролям
+                        </Link>
+                    </p>
+                ) : (
+                    <SubmitButton processing={processing}>
+                        Сохранить изменения
+                    </SubmitButton>
+                )}
+            </form>
         </AppLayout>
     );
 }

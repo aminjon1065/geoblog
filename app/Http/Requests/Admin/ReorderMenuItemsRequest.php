@@ -35,4 +35,16 @@ class ReorderMenuItemsRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'order.required' => 'Не передан порядок пунктов.',
+            'order.*.integer' => 'Неверный идентификатор пункта меню.',
+            'order.*.exists' => 'Пункт не найден в этом меню.',
+        ];
+    }
 }

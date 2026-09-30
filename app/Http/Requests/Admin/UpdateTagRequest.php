@@ -2,27 +2,28 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use App\Models\Tag;
 
-class UpdateTagRequest extends FormRequest
+/**
+ * "Изменить метку" → "Обновить".
+ */
+class UpdateTagRequest extends TermFormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('update', $this->route('tag')) ?? false;
+        return $this->user()?->can('update', $this->editedTerm()) ?? false;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
+    protected function termClass(): string
     {
-        return [
-            'slug' => ['required', Rule::unique('tags')->ignore($this->route('tag')->id), 'max:255', 'alpha_dash'],
-            'translations' => ['required', 'array'],
-            'translations.*.name' => ['required', 'string', 'max:255'],
-        ];
+        return Tag::class;
+    }
+
+    protected function editedTerm(): Tag
+    {
+        /** @var Tag $tag */
+        $tag = $this->route('tag');
+
+        return $tag;
     }
 }

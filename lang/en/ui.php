@@ -82,14 +82,14 @@ return [
     'all' => 'All',
     'tags' => 'Tags',
 
-
-
     // Services
     'back_to_services' => 'Back to services',
 
     // Pages fallback
     'no_content_yet' => 'Information will be added soon.',
     'no_gallery_yet' => 'Photos will be added soon.',
+    'gallery_open_photo' => 'Open photo',
+    'close' => 'Close',
     'no_members_yet' => 'Information about association members will be added soon.',
     'no_projects_yet' => 'Information about projects will be added soon.',
 ];

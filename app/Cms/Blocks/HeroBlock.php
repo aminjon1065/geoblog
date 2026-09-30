@@ -13,14 +13,15 @@ final class HeroBlock implements BlockType
 
     public function label(): string
     {
-        return 'Hero';
+        return 'Обложка';
     }
 
     public function settingsSchema(): array
     {
         return [
-            'image_id' => 'integer',   // optional Media row id; null for text-only hero
-            'alignment' => 'string',   // 'left' | 'center' | 'right'
+            // Optional Media row id; null for a text-only hero.
+            'image_id' => 'integer',
+            'alignment' => 'choice:left,center,right',
         ];
     }
 
@@ -28,9 +29,10 @@ final class HeroBlock implements BlockType
     {
         return [
             'title' => 'string',
-            'subtitle' => 'string',
+            'subtitle' => 'text',
             'cta_label' => 'string',
-            'cta_url' => 'string',
+            // Rendered straight into the button's href, so only http(s) and site paths pass.
+            'cta_url' => 'url',
         ];
     }
 

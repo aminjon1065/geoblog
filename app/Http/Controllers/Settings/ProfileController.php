@@ -5,23 +5,33 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Services\Users\RoleCatalog;
+use App\Services\Users\UserService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Fortify\Features;
 
 class ProfileController extends Controller
 {
+    public function __construct(private readonly UserService $users) {}
+
     /**
      * Show the user's profile settings page.
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'roles' => array_map(RoleCatalog::label(...), RoleCatalog::sort($user->getRoleNames())),
+            'twoFactorAvailable' => Features::canManageTwoFactorAuthentication(),
+            'canDeleteAccount' => ! $this->users->isLastSuperAdmin($user),
         ]);
     }
 
@@ -38,7 +48,7 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return to_route('profile.edit');
+        return to_route('profile.edit')->with('success', 'Профиль обновлён.');
     }
 
     /**

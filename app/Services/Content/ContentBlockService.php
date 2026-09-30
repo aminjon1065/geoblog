@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Content;
 
 use App\Cms\Blocks\BlockRegistry;
+use App\Cms\Blocks\BlockType;
 use App\DataTransferObjects\Content\ContentBlockData;
 use App\Models\ContentBlock;
 use App\Models\ContentPage;
@@ -17,19 +18,19 @@ final class ContentBlockService
 
     public function create(ContentPage $page, ContentBlockData $data): ContentBlock
     {
-        $this->requireKnownType($data->type);
+        $type = $this->requireKnownType($data->type);
 
-        return DB::transaction(function () use ($page, $data): ContentBlock {
+        return DB::transaction(function () use ($page, $data, $type): ContentBlock {
             // New blocks land at the end of the page's existing order.
             $nextOrder = (int) ($page->blocks()->max('sort_order') ?? 0) + 1;
 
             $block = $page->blocks()->create([
-                'type' => $data->type,
+                'type' => $type->key(),
                 'sort_order' => $nextOrder,
-                'settings' => $this->mergeSettings($data->type, $data->settings),
+                'settings' => array_replace($type->defaultSettings(), $data->settings ?? []),
             ]);
 
-            $this->writeTranslations($block, $data);
+            $this->writeTranslations($block, $type, $data);
 
             return $block;
         });
@@ -37,18 +38,22 @@ final class ContentBlockService
 
     public function update(ContentBlock $block, ContentBlockData $data): ContentBlock
     {
-        $this->requireKnownType($data->type);
+        // The type is not editable in place — changing it would invalidate the
+        // settings/content schema — so the stored one rules, not the payload's.
+        $type = $this->requireKnownType($block->type);
 
-        return DB::transaction(function () use ($block, $data): ContentBlock {
-            $block->update([
-                // The type is not editable in place — changing it would invalidate the
-                // settings/content schema. The Request layer enforces this; we re-check
-                // defensively because services are entry points for tests and tinker.
-                'type' => $block->type,
-                'settings' => $this->mergeSettings($block->type, $data->settings),
-            ]);
+        return DB::transaction(function () use ($block, $data, $type): ContentBlock {
+            if ($data->settings !== null) {
+                $block->update([
+                    'settings' => array_replace(
+                        $type->defaultSettings(),
+                        array_intersect_key($block->settings ?? [], $type->settingsSchema()),
+                        $data->settings,
+                    ),
+                ]);
+            }
 
-            $this->writeTranslations($block, $data);
+            $this->writeTranslations($block, $type, $data);
 
             return $block;
         });
@@ -75,38 +80,35 @@ final class ContentBlockService
         });
     }
 
-    private function requireKnownType(string $type): void
+    private function requireKnownType(string $key): BlockType
     {
-        if (! $this->registry->has($type)) {
-            throw new InvalidArgumentException("Unknown block type: {$type}");
-        }
+        return $this->registry->get($key)
+            ?? throw new InvalidArgumentException("Unknown block type: {$key}");
     }
 
     /**
-     * Merge user-supplied settings on top of catalog defaults so omitted keys still
-     * land in storage with a defined value.
-     *
-     * @param  array<string, mixed>  $userSettings
-     * @return array<string, mixed>
+     * Save the content of the languages the form sent, field by field over
+     * what is stored; languages it did not send keep their content.
      */
-    private function mergeSettings(string $type, array $userSettings): array
+    private function writeTranslations(ContentBlock $block, BlockType $type, ContentBlockData $data): void
     {
-        $defaults = $this->registry->get($type)?->defaultSettings() ?? [];
-
-        return array_replace($defaults, $userSettings);
-    }
-
-    private function writeTranslations(ContentBlock $block, ContentBlockData $data): void
-    {
-        foreach ($data->translations as $locale => $content) {
-            $block->translations()->updateOrCreate(
-                ['locale' => (string) $locale],
-                ['content' => $content],
-            );
+        if ($data->translations === []) {
+            return;
         }
 
-        $block->translations()
-            ->whereNotIn('locale', array_keys($data->translations))
-            ->delete();
+        $stored = $block->translations()->get()->keyBy('locale');
+
+        foreach ($data->translations as $locale => $content) {
+            $current = $stored->get($locale)?->content;
+
+            $block->translations()->updateOrCreate(
+                ['locale' => $locale],
+                ['content' => array_replace(
+                    $type->defaultContent(),
+                    is_array($current) ? array_intersect_key($current, $type->contentSchema()) : [],
+                    $content,
+                )],
+            );
+        }
     }
 }

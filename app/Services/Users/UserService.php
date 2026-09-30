@@ -13,7 +13,8 @@ use Spatie\Permission\PermissionRegistrar;
  * Owns the write-side lifecycle of an admin-managed user record.
  *
  * Self-protections (an admin must not lock themselves out of the panel) live in
- * the controller, not here — see `UserController::edit` / `destroy`.
+ * the controller and form requests, not here — see `UserController::edit` /
+ * `destroy` and `UpdateUserRequest::authorize`.
  */
 final class UserService
 {
@@ -74,5 +75,15 @@ final class UserService
     public function delete(User $user): void
     {
         $user->delete();
+    }
+
+    /**
+     * Whether the user is the only super administrator: removing such an
+     * account would leave nobody able to manage roles or grant the role again.
+     */
+    public function isLastSuperAdmin(User $user): bool
+    {
+        return $user->isSuperAdmin()
+            && User::role(RoleCatalog::SUPER_ADMIN)->whereKeyNot($user->id)->doesntExist();
     }
 }

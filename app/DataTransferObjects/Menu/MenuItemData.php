@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Menu;
 
+use App\Support\TranslationInput;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -14,7 +15,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final readonly class MenuItemData
 {
     /**
-     * @param  array<string, string>  $translations  locale → label
+     * @param  array<string, string>  $translations  locale → label to save
+     * @param  list<string>  $clearedLocales  languages whose label the editor emptied: removed
      */
     public function __construct(
         public ?int $parentId,
@@ -22,28 +24,24 @@ final readonly class MenuItemData
         public ?string $linkTarget,
         public bool $openInNewTab,
         public array $translations,
+        public array $clearedLocales = [],
     ) {}
 
     public static function fromRequest(FormRequest $request): self
     {
         $parentRaw = $request->validated('parent_id');
-        $rawTranslations = (array) ($request->validated('translations', []) ?? []);
-
-        $translations = [];
-        foreach ($rawTranslations as $locale => $data) {
-            $label = is_array($data) ? (string) ($data['label'] ?? '') : (string) $data;
-            if ($label === '') {
-                continue;
-            }
-            $translations[(string) $locale] = $label;
-        }
+        $changes = TranslationInput::split(
+            (array) ($request->validated('translations', []) ?? []),
+            'label',
+        );
 
         return new self(
             parentId: $parentRaw !== null && $parentRaw !== '' ? (int) $parentRaw : null,
             linkType: (string) $request->validated('link_type'),
             linkTarget: self::nullableString($request->validated('link_target')),
             openInNewTab: (bool) $request->validated('open_in_new_tab', false),
-            translations: $translations,
+            translations: array_map(fn (array $fields): string => (string) $fields['label'], $changes['save']),
+            clearedLocales: $changes['clear'],
         );
     }
 

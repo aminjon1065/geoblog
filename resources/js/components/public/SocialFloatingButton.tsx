@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { MessageCircle, Send, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function SocialFloatingButton() {
     const [isOpen, setIsOpen] = useState(false);
@@ -7,7 +7,7 @@ export default function SocialFloatingButton() {
     const toggleMenu = () => setIsOpen(!isOpen);
 
     return (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed right-6 bottom-6 z-50">
             {/* Social Media Links */}
             <div
                 className={`mb-3 flex flex-col gap-3 transition-all duration-300 ${
@@ -49,15 +49,15 @@ export default function SocialFloatingButton() {
                     <MessageCircle
                         className={`absolute inset-0 transition-all duration-300 ${
                             isOpen
-                                ? 'rotate-90 scale-0 opacity-0'
-                                : 'rotate-0 scale-100 opacity-100'
+                                ? 'scale-0 rotate-90 opacity-0'
+                                : 'scale-100 rotate-0 opacity-100'
                         }`}
                     />
                     <X
                         className={`absolute inset-0 transition-all duration-300 ${
                             isOpen
-                                ? 'rotate-0 scale-100 opacity-100'
-                                : '-rotate-90 scale-0 opacity-0'
+                                ? 'scale-100 rotate-0 opacity-100'
+                                : 'scale-0 -rotate-90 opacity-0'
                         }`}
                     />
                 </div>

@@ -10,8 +10,9 @@ use App\Models\User;
  * Authorisation rules for managing other application users.
  *
  * Important: `super_admin` viewers bypass these checks via Gate::before, so anywhere
- * we need a rule the super_admin must *also* obey (notably self-delete), the rule
- * lives in the controller, not here.
+ * we need a rule the super_admin must *also* obey (notably self-delete and changing
+ * one's own roles), the rule lives in the controller or form request, not here.
+ * Who may hand out the super_admin role is validated in Store/UpdateUserRequest.
  */
 class UserPolicy
 {

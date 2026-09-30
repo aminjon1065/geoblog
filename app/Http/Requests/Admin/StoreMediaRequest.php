@@ -3,8 +3,14 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Media;
+use App\Services\Media\MediaService;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Batch upload of the classic form (`files[]`). The library screens upload
+ * one file per request through UploadMediaRequest; both share the MIME
+ * allow-list and the size cap.
+ */
 class StoreMediaRequest extends FormRequest
 {
     public function authorize(): bool
@@ -32,16 +38,8 @@ class StoreMediaRequest extends FormRequest
             'files.*' => [
                 'required',
                 'file',
-                'max:10240',
-                'mimetypes:'.implode(',', [
-                    'image/jpeg',
-                    'image/png',
-                    'image/gif',
-                    'image/webp',
-                    'application/pdf',
-                    'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                ]),
+                'max:'.MediaService::MAX_UPLOAD_KILOBYTES,
+                'mimetypes:'.implode(',', UploadMediaRequest::MIME_TYPES),
             ],
             // Optional: bind every uploaded file in this batch to a target folder.
             // Null means "drop into root" — consistent with how media rows are stored.
@@ -55,9 +53,17 @@ class StoreMediaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'files.*.mimetypes' => 'Only JPG, PNG, GIF, WebP, PDF, DOC, and DOCX files are allowed. SVG and executable formats are blocked.',
-            'files.*.max' => 'Each file must be 10 MB or smaller.',
-            'files.max' => 'You can upload a maximum of 20 files at once.',
+            'files.required' => 'Выберите файлы для загрузки.',
+            'files.array' => 'Выберите файлы для загрузки.',
+            'files.min' => 'Выберите файлы для загрузки.',
+            'files.max' => 'За один раз можно загрузить не больше 20 файлов.',
+            'files.*.required' => 'Выберите файл.',
+            'files.*.file' => 'Файл не удалось загрузить.',
+            'files.*.uploaded' => 'Файл не удалось загрузить: возможно, он больше допустимого размера.',
+            'files.*.mimetypes' => 'Можно загружать JPG, PNG, GIF, WebP, PDF, DOC и DOCX. SVG и исполняемые файлы запрещены.',
+            'files.*.max' => 'Файл должен быть не больше 10 МБ.',
+            'folder_id.integer' => 'Выберите папку из списка.',
+            'folder_id.exists' => 'Выбранная папка не найдена.',
         ];
     }
 }

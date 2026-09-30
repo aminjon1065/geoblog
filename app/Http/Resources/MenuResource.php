@@ -11,7 +11,8 @@ use App\Services\Menu\MenuItemUrlResolver;
 final class MenuResource
 {
     /**
-     * Row shape for Admin\Menus\Index.
+     * Row shape for Admin\Menus\Index. Uses `items_count` when the query
+     * loaded it (withCount) instead of counting per row.
      *
      * @return array<string, mixed>
      */
@@ -21,7 +22,7 @@ final class MenuResource
             'id' => $menu->id,
             'slug' => $menu->slug,
             'name' => $menu->name,
-            'items_count' => $menu->items()->count(),
+            'items_count' => $menu->items_count ?? $menu->items()->count(),
         ];
     }
 

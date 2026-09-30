@@ -31,19 +31,28 @@ return [
             'AutoFormat.AutoParagraph' => true,
             'AutoFormat.RemoveEmpty' => true,
         ],
-        // Profile used for all TipTap-authored blog content (PostTranslation.content,
-        // PageTranslation.content, ServiceTranslation.content/description). Tag list
-        // mirrors the editor's enabled extensions; URL schemes are restricted so
-        // javascript: / data: payloads cannot survive sanitization.
+        // Profile used for all TipTap-authored content (PostTranslation.content,
+        // PageTranslation.content, ServiceTranslation.content/description, CMS blocks).
+        // The allow-list mirrors what the block editor can emit: figures with
+        // captions and alignment classes, callouts, galleries, tables with cell
+        // fills and column widths, text colour and alignment, YouTube/Vimeo embeds.
+        // URL schemes are restricted so javascript: / data: payloads cannot survive,
+        // and iframes only load from the embed hosts in URI.SafeIframeRegexp.
         'blog' => [
             'HTML.Doctype' => 'HTML 4.01 Transitional',
-            'HTML.Allowed' => 'p,br,hr,'
-                .'h2,h3,h4,'
-                .'strong,em,s,u,code,sub,sup,'
+            'HTML.Allowed' => 'p[style],br,hr,'
+                .'h2[style],h3[style],h4[style],'
+                .'strong,b,em,i,s,u,code,sub,sup,mark,span[style],'
                 .'ul,ol,li,'
                 .'blockquote,pre,'
-                .'a[href|title|target|rel],'
-                .'img[src|alt|title|width|height]',
+                .'a[href|title|target|rel|class],'
+                .'img[src|alt|title|width|height|class|srcset|sizes|data-media-id|data-decorative],'
+                .'figure[class],figcaption,'
+                .'aside[class|data-callout-type],'
+                .'table[style],colgroup,col[span|style|width],thead,tbody,tr,'
+                .'th[colspan|rowspan|style|colwidth],td[colspan|rowspan|style|colwidth],'
+                .'div[data-youtube-video],iframe[src|width|height|frameborder|allowfullscreen]',
+            'CSS.AllowedProperties' => 'text-align,color,background-color,width,min-width',
             'URI.AllowedSchemes' => ['http' => true, 'https' => true, 'mailto' => true, 'tel' => true],
             'AutoFormat.AutoParagraph' => false,
             'AutoFormat.RemoveEmpty' => true,
@@ -51,6 +60,8 @@ return [
             'HTML.Nofollow' => true,
             'Attr.AllowedFrameTargets' => ['_blank'],
             'Core.RemoveInvalidImg' => true,
+            'HTML.SafeIframe' => true,
+            'URI.SafeIframeRegexp' => '%^(https?:)?//(www\.youtube(-nocookie)?\.com/embed/|player\.vimeo\.com/video/)%',
         ],
         'test' => [
             'Attr.EnableID' => 'true',
@@ -61,14 +72,16 @@ return [
         ],
         'custom_definition' => [
             'id' => 'html5-definitions',
-            'rev' => 1,
+            // Bump on every change below: HTMLPurifier caches the definition by rev.
+            'rev' => 2,
             'debug' => false,
             'elements' => [
                 // http://developers.whatwg.org/sections.html
                 ['section', 'Block', 'Flow', 'Common'],
                 ['nav',     'Block', 'Flow', 'Common'],
                 ['article', 'Block', 'Flow', 'Common'],
-                ['aside',   'Block', 'Flow', 'Common'],
+                // Callouts carry their kind (warning / info / quote) on the element itself.
+                ['aside',   'Block', 'Flow', 'Common', ['data-callout-type' => 'Text']],
                 ['header',  'Block', 'Flow', 'Common'],
                 ['footer',  'Block', 'Flow', 'Common'],
 
@@ -109,6 +122,13 @@ return [
             ],
             'attributes' => [
                 ['iframe', 'allowfullscreen', 'Bool'],
+                ['div', 'data-youtube-video', 'Text'],
+                ['img', 'srcset', 'Text'],
+                ['img', 'sizes', 'Text'],
+                ['img', 'data-media-id', 'Text'],
+                ['img', 'data-decorative', 'Text'],
+                ['td', 'colwidth', 'Text'],
+                ['th', 'colwidth', 'Text'],
                 ['table', 'height', 'Text'],
                 ['td', 'border', 'Text'],
                 ['th', 'border', 'Text'],

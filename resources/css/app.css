@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
+@import './admin.css';
+@import './editor.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -299,4 +301,255 @@
     max-width: 100%;
     border-radius: 0.5rem;
     margin: 1.5rem 0;
+}
+
+/* ---- Blocks of the post editor, as the site shows them -------------------
+   Figures, galleries, callouts, tables, video and file links come from the
+   admin block editor (resources/js/components/editor) and are allowed by the
+   `blog` HTMLPurifier profile; they keep the site's own palette. */
+.prose-public::after {
+    content: '';
+    display: block;
+    clear: both;
+}
+
+.prose-public h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--foreground);
+}
+
+.prose-public hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.prose-public code {
+    background: var(--muted);
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.9em;
+}
+
+.prose-public pre {
+    background: var(--foreground);
+    color: var(--background);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+}
+
+.prose-public pre code {
+    background: none;
+    padding: 0;
+}
+
+.prose-public figure.re-figure {
+    margin: 1.5rem 0;
+    max-width: 100%;
+}
+
+.prose-public figure.re-figure img {
+    width: 100%;
+    margin: 0;
+    border-radius: 0.5rem;
+}
+
+.prose-public figure.re-figure figcaption,
+.prose-public figure.cms-gallery figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+    text-align: center;
+}
+
+.prose-public figure.align-left {
+    float: left;
+    margin: 0.25rem 1.5rem 1rem 0;
+}
+
+.prose-public figure.align-right {
+    float: right;
+    margin: 0.25rem 0 1rem 1.5rem;
+}
+
+.prose-public figure.align-center {
+    margin-inline: auto;
+}
+
+.prose-public figure.size-small {
+    width: 25%;
+}
+
+.prose-public figure.size-medium {
+    width: 50%;
+}
+
+.prose-public figure.size-large {
+    width: 75%;
+}
+
+.prose-public figure.size-full {
+    width: 100%;
+}
+
+@media (max-width: 640px) {
+    .prose-public figure.align-left,
+    .prose-public figure.align-right {
+        float: none;
+        margin: 1.5rem 0;
+    }
+
+    .prose-public figure.size-small,
+    .prose-public figure.size-medium,
+    .prose-public figure.size-large {
+        width: 100%;
+    }
+}
+
+.prose-public figure.cms-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 1.75rem 0;
+}
+
+.prose-public figure.cms-gallery.columns-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.prose-public figure.cms-gallery.columns-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+    .prose-public figure.cms-gallery,
+    .prose-public figure.cms-gallery.columns-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.prose-public figure.cms-gallery img {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 0.375rem;
+}
+
+.prose-public figure.cms-gallery figcaption {
+    grid-column: 1 / -1;
+}
+
+.prose-public aside.re-callout {
+    margin: 1.75rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--primary);
+    border-radius: 0.5rem;
+    background: color-mix(in oklch, var(--primary) 7%, var(--background));
+}
+
+.prose-public aside.re-callout p {
+    margin-bottom: 0.5rem;
+    color: var(--foreground);
+}
+
+.prose-public aside.re-callout > :last-child {
+    margin-bottom: 0;
+}
+
+.prose-public aside.re-callout-warning {
+    border-left-color: var(--accent);
+    background: color-mix(in oklch, var(--accent) 12%, var(--background));
+}
+
+.prose-public aside.re-callout-success {
+    border-left-color: oklch(0.55 0.14 150);
+    background: color-mix(in oklch, oklch(0.55 0.14 150) 9%, var(--background));
+}
+
+.prose-public aside.re-callout-quote {
+    border-left-color: var(--muted-foreground);
+    background: var(--muted);
+    font-style: italic;
+}
+
+/* The table element scrolls sideways on narrow screens; its body is the
+   real table and keeps the full width. */
+.prose-public table {
+    display: block;
+    max-width: 100%;
+    margin: 1.75rem 0;
+    overflow-x: auto;
+    font-size: 0.95rem;
+}
+
+.prose-public table > tbody {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.prose-public th,
+.prose-public td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.prose-public th {
+    background: var(--muted);
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.prose-public td p,
+.prose-public th p {
+    margin: 0;
+}
+
+.prose-public div[data-youtube-video] {
+    margin: 1.75rem 0;
+}
+
+.prose-public div[data-youtube-video] iframe {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 0.5rem;
+}
+
+.prose-public a.cms-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--card);
+    color: var(--foreground);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.prose-public a.cms-file::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    background: var(--primary);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cline x1='12' x2='12' y1='15' y2='3'/%3E%3C/svg%3E")
+        center / contain no-repeat;
+}
+
+.prose-public a.cms-file:hover {
+    border-color: var(--primary);
 }

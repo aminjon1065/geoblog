@@ -1,190 +1,375 @@
 import { Head, Link, router } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import { Pagination, type PaginatedShape } from '@/components/admin/pagination';
-import { SearchBar } from '@/components/admin/search-bar';
-import { Button } from '@/components/ui/button';
+import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import {
+    BulkActions,
+    ListViews,
+    RowAction,
+    RowActions,
+    SearchBox,
+    SortableHeader,
+    TablePagination,
+    pluralRu,
+    useRowSelection,
+} from '@/components/wp/list-table';
+import type { ListView, PaginationMeta } from '@/components/wp/list-table';
+import { PageHeader } from '@/components/wp/page-header';
+import { useInitials } from '@/hooks/use-initials';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { cn } from '@/lib/utils';
+import { index as postsIndex } from '@/routes/admin/posts';
+import { bulkDestroy, create, destroy, edit } from '@/routes/admin/users';
 
-interface UserRow {
+type RoleLabel = {
+    name: string;
+    label: string;
+};
+
+type UserRow = {
     id: number;
     name: string;
     email: string;
     email_verified: boolean;
     two_factor_enabled: boolean;
     is_super_admin: boolean;
-    roles: string[];
+    roles: RoleLabel[];
+    posts_count: number;
     created_at: string | null;
     can: {
         update: boolean;
         delete: boolean;
         reset_password: boolean;
     };
-}
+};
 
-interface PaginatedUsers extends PaginatedShape {
-    data: UserRow[];
-}
-
-interface Props {
-    users: PaginatedUsers;
+type Props = {
+    users: PaginationMeta & { data: UserRow[] };
     filters: {
         search: string | null;
         role: string | null;
+        orderby: string;
+        order: 'asc' | 'desc';
     };
-    roles: string[];
-}
+    views: ListView[];
+};
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Users', href: '/admin/users' },
-];
+type PendingDelete = { ids: number[]; name?: string };
 
-export default function UsersIndex({ users, filters, roles }: Props) {
+export default function UsersIndex({ users, filters, views }: Props) {
     const { can } = usePermissions();
-    const canCreate = can('users.manage');
+    const getInitials = useInitials();
+    const deletableIds = users.data
+        .filter((user) => user.can.delete)
+        .map((user) => user.id);
+    const selection = useRowSelection(deletableIds);
+    const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+        null,
+    );
 
-    function handleDelete(id: number) {
-        router.delete(`/admin/users/${id}`, { preserveScroll: true });
-    }
+    const confirmDelete = () => {
+        if (!pendingDelete) {
+            return;
+        }
+
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => selection.clear(),
+        };
+
+        if (pendingDelete.ids.length === 1) {
+            router.visit(destroy(pendingDelete.ids[0]), options);
+        } else {
+            router.visit(bulkDestroy(), {
+                ...options,
+                data: { ids: pendingDelete.ids },
+            });
+        }
+    };
+
+    const bulkActions =
+        deletableIds.length > 0 ? [{ value: 'delete', label: 'Удалить' }] : [];
+
+    const applyBulk = (action: string) => {
+        if (action === 'delete' && selection.selected.length > 0) {
+            setPendingDelete({ ids: selection.selected });
+        }
+    };
+
+    const header = (position: 'top' | 'bottom') => (
+        <tr>
+            <td className="check-column">
+                {deletableIds.length > 0 && (
+                    <>
+                        <label
+                            className="wp-screen-reader-text"
+                            htmlFor={`users-select-all-${position}`}
+                        >
+                            Выделить все
+                        </label>
+                        <input
+                            id={`users-select-all-${position}`}
+                            type="checkbox"
+                            className="size-4 accent-[#2271b1]"
+                            checked={selection.allSelected}
+                            onChange={selection.toggleAll}
+                        />
+                    </>
+                )}
+            </td>
+            <th scope="col" className="column-primary">
+                <SortableHeader
+                    label="Имя"
+                    column="name"
+                    orderBy={filters.orderby}
+                    order={filters.order}
+                />
+            </th>
+            <th scope="col">
+                <SortableHeader
+                    label="E-mail"
+                    column="email"
+                    orderBy={filters.orderby}
+                    order={filters.order}
+                />
+            </th>
+            <th scope="col">Роль</th>
+            <th scope="col" className="w-24 text-center!">
+                <SortableHeader
+                    label="Записи"
+                    column="posts"
+                    orderBy={filters.orderby}
+                    order={filters.order}
+                    defaultOrder="desc"
+                />
+            </th>
+        </tr>
+    );
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Users" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <Heading
-                        title="Users"
-                        description="Manage admin and content team members."
-                    />
-                    {canCreate && (
-                        <Button asChild>
-                            <Link href="/admin/users/create">New User</Link>
-                        </Button>
-                    )}
-                </div>
+        <AppLayout>
+            <Head title="Пользователи" />
 
-                <SearchBar
-                    url="/admin/users"
-                    search={filters.search}
-                    placeholder="Search name or email…"
-                    selects={[
-                        {
-                            name: 'role',
-                            label: 'Role',
-                            value: filters.role ?? '',
-                            options: roles.map((r) => ({ value: r, label: r })),
-                        },
-                    ]}
+            <PageHeader
+                title="Пользователи"
+                action={
+                    can('users.manage')
+                        ? { label: 'Добавить пользователя', href: create.url() }
+                        : null
+                }
+                subtitle={
+                    filters.search
+                        ? `Результаты поиска: «${filters.search}»`
+                        : undefined
+                }
+            />
+
+            <div className="flex flex-wrap items-end justify-between gap-2">
+                <ListViews
+                    views={views}
+                    current={filters.role ?? 'all'}
+                    param="role"
                 />
+                <SearchBox
+                    label="Поиск пользователей"
+                    defaultValue={filters.search}
+                />
+            </div>
 
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-medium">Name</th>
-                                <th className="px-4 py-3 text-left font-medium">Email</th>
-                                <th className="px-4 py-3 text-left font-medium">Roles</th>
-                                <th className="px-4 py-3 text-left font-medium">Status</th>
-                                <th className="px-4 py-3 text-right font-medium">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {users.data.map((user) => (
-                                <tr key={user.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3 font-medium">
-                                        {user.name}
-                                        {user.is_super_admin && (
-                                            <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                                                super
+            <div className="tablenav">
+                <BulkActions
+                    actions={bulkActions}
+                    disabled={selection.selected.length === 0}
+                    onApply={applyBulk}
+                />
+                <TablePagination meta={users} />
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="wp-list-table">
+                    <thead>{header('top')}</thead>
+                    <tbody>
+                        {users.data.map((user) => {
+                            const postsHref = postsIndex.url({
+                                query: { author: user.id },
+                            });
+
+                            return (
+                                <tr
+                                    key={user.id}
+                                    className={cn(
+                                        selection.isSelected(user.id) &&
+                                            'is-selected',
+                                    )}
+                                >
+                                    <th scope="row" className="check-column">
+                                        {user.can.delete && (
+                                            <>
+                                                <label
+                                                    className="wp-screen-reader-text"
+                                                    htmlFor={`user-${user.id}`}
+                                                >
+                                                    Выбрать {user.name}
+                                                </label>
+                                                <input
+                                                    id={`user-${user.id}`}
+                                                    type="checkbox"
+                                                    className="size-4 accent-[#2271b1]"
+                                                    checked={selection.isSelected(
+                                                        user.id,
+                                                    )}
+                                                    onChange={() =>
+                                                        selection.toggle(
+                                                            user.id,
+                                                        )
+                                                    }
+                                                />
+                                            </>
+                                        )}
+                                    </th>
+                                    <td className="column-primary">
+                                        <div className="flex items-start gap-2.5">
+                                            <span
+                                                aria-hidden
+                                                className="flex size-8 shrink-0 items-center justify-center bg-[#dcdcde] text-[12px] font-semibold text-[#50575e]"
+                                            >
+                                                {getInitials(user.name)}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <strong>
+                                                    {user.can.update ? (
+                                                        <Link
+                                                            href={edit.url(
+                                                                user.id,
+                                                            )}
+                                                            className="row-title"
+                                                        >
+                                                            {user.name}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="text-[14px] text-[#1d2327]">
+                                                            {user.name}
+                                                        </span>
+                                                    )}
+                                                </strong>
+                                                {user.two_factor_enabled && (
+                                                    <ShieldCheck
+                                                        role="img"
+                                                        className="ml-1.5 inline size-3.5 align-[-2px] text-[#00a32a]"
+                                                        aria-label="Двухфакторная аутентификация включена"
+                                                    />
+                                                )}
+                                                <RowActions>
+                                                    {user.can.update && (
+                                                        <RowAction>
+                                                            <Link
+                                                                href={edit.url(
+                                                                    user.id,
+                                                                )}
+                                                            >
+                                                                Изменить
+                                                            </Link>
+                                                        </RowAction>
+                                                    )}
+                                                    {user.can.delete && (
+                                                        <RowAction danger>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setPendingDelete(
+                                                                        {
+                                                                            ids: [
+                                                                                user.id,
+                                                                            ],
+                                                                            name: user.name,
+                                                                        },
+                                                                    )
+                                                                }
+                                                            >
+                                                                Удалить
+                                                            </button>
+                                                        </RowAction>
+                                                    )}
+                                                    {user.posts_count > 0 && (
+                                                        <RowAction>
+                                                            <Link
+                                                                href={postsHref}
+                                                            >
+                                                                Записи
+                                                            </Link>
+                                                        </RowAction>
+                                                    )}
+                                                </RowActions>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a
+                                            href={`mailto:${user.email}`}
+                                            className="break-all"
+                                        >
+                                            {user.email}
+                                        </a>
+                                        {!user.email_verified && (
+                                            <span className="block text-[12px] text-[#996800]">
+                                                E-mail не подтверждён
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {user.email}
+                                    <td>
+                                        {user.roles.length > 0
+                                            ? user.roles
+                                                  .map((role) => role.label)
+                                                  .join(', ')
+                                            : '—'}
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1">
-                                            {user.roles.length === 0 ? (
-                                                <span className="text-muted-foreground">
-                                                    —
-                                                </span>
-                                            ) : (
-                                                user.roles.map((role) => (
-                                                    <span
-                                                        key={role}
-                                                        className="rounded bg-secondary px-2 py-0.5 text-xs"
-                                                    >
-                                                        {role}
-                                                    </span>
-                                                ))
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex gap-2 text-xs text-muted-foreground">
-                                            {user.email_verified ? (
-                                                <span className="text-emerald-600 dark:text-emerald-400">
-                                                    verified
-                                                </span>
-                                            ) : (
-                                                <span>unverified</span>
-                                            )}
-                                            {user.two_factor_enabled && (
-                                                <span className="text-blue-600 dark:text-blue-400">
-                                                    2FA
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {user.can.update && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/admin/users/${user.id}/edit`}
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                </Button>
-                                            )}
-                                            {user.can.delete && (
-                                                <ConfirmButton
-                                                    title="Delete user?"
-                                                    description={`"${user.name}" will lose all access immediately.`}
-                                                    onConfirm={() =>
-                                                        handleDelete(user.id)
-                                                    }
-                                                >
-                                                    Delete
-                                                </ConfirmButton>
-                                            )}
-                                        </div>
+                                    <td className="text-center">
+                                        {user.posts_count > 0 ? (
+                                            <Link
+                                                href={postsHref}
+                                                aria-label={`${user.posts_count} ${pluralRu(user.posts_count, 'запись', 'записи', 'записей')} пользователя ${user.name}`}
+                                            >
+                                                {user.posts_count}
+                                            </Link>
+                                        ) : (
+                                            0
+                                        )}
                                     </td>
                                 </tr>
-                            ))}
-                            {users.data.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-4 py-8 text-center text-muted-foreground"
-                                    >
-                                        No users found.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <Pagination meta={users} />
+                            );
+                        })}
+                        {users.data.length === 0 && (
+                            <tr className="no-items">
+                                <td colSpan={5}>Пользователи не найдены.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                    <tfoot>{header('bottom')}</tfoot>
+                </table>
             </div>
+
+            <div className="tablenav">
+                <BulkActions
+                    actions={bulkActions}
+                    disabled={selection.selected.length === 0}
+                    onApply={applyBulk}
+                    idSuffix="bottom"
+                />
+                <TablePagination meta={users} />
+            </div>
+
+            <ConfirmDialog
+                open={pendingDelete !== null}
+                onOpenChange={(open) => !open && setPendingDelete(null)}
+                onConfirm={confirmDelete}
+                title={
+                    pendingDelete?.name
+                        ? `Удалить пользователя «${pendingDelete.name}»?`
+                        : `Удалить выбранных пользователей (${pendingDelete?.ids.length ?? 0})?`
+                }
+                description="Учётная запись будет удалена без возможности восстановления, а её владелец потеряет доступ к панели управления."
+            />
         </AppLayout>
     );
 }

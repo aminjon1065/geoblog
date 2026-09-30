@@ -1,30 +1,32 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import type { SharedData } from '@/types';
+import type { FlashData, SharedData } from '@/types';
 
 /**
  * Surfaces Laravel session-flash messages (`->with('success', '...')`) as Sonner toasts.
  * Mount once near the top of any layout that wraps authenticated admin pages.
  *
- * Inertia replaces the `flash` prop on every navigation; an in-component ref guards
- * against re-firing the same toast on prop re-emission within the same page.
+ * Every Inertia response carries a new `flash` object, so the same message saved
+ * twice in a row toasts twice; re-renders of one response (same object) don't.
  */
 export function useFlashToast(): void {
     const flash = usePage<SharedData>().props.flash;
-    const lastShown = useRef<{ success?: string; error?: string }>({});
+    const lastShown = useRef<FlashData | undefined>(undefined);
 
     useEffect(() => {
-        const success = typeof flash?.success === 'string' ? flash.success : null;
-        if (success && success !== lastShown.current.success) {
-            toast.success(success);
-            lastShown.current.success = success;
+        if (!flash || flash === lastShown.current) {
+            return;
         }
 
-        const error = typeof flash?.error === 'string' ? flash.error : null;
-        if (error && error !== lastShown.current.error) {
-            toast.error(error);
-            lastShown.current.error = error;
+        lastShown.current = flash;
+
+        if (typeof flash.success === 'string' && flash.success !== '') {
+            toast.success(flash.success);
         }
-    }, [flash?.success, flash?.error]);
+
+        if (typeof flash.error === 'string' && flash.error !== '') {
+            toast.error(flash.error);
+        }
+    }, [flash]);
 }

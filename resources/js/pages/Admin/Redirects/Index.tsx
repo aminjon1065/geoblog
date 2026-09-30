@@ -1,14 +1,24 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import { Pagination, type PaginatedShape } from '@/components/admin/pagination';
-import { SearchBar } from '@/components/admin/search-bar';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { usePermissions } from '@/hooks/use-permissions';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { REDIRECT_TYPES } from '@/components/admin/redirects/redirect-fields';
+import {
+    BulkActions,
+    RowAction,
+    RowActions,
+    SearchBox,
+    SortableHeader,
+    TablePagination,
+    useRowSelection,
+} from '@/components/wp/list-table';
+import type { PaginationMeta } from '@/components/wp/list-table';
+import { PageHeader } from '@/components/wp/page-header';
+import { formatDateTime } from '@/helpers/formatDate';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { cn } from '@/lib/utils';
+import { bulkDestroy, create, destroy, edit } from '@/routes/admin/redirects';
 
-interface RedirectRow {
+type RedirectRow = {
     id: number;
     from_path: string;
     to_path: string;
@@ -16,122 +26,247 @@ interface RedirectRow {
     hits: number;
     last_hit_at: string | null;
     updated_at: string | null;
-}
+};
 
-interface PaginatedRedirects extends PaginatedShape {
-    data: RedirectRow[];
-}
-
-interface Props {
-    redirects: PaginatedRedirects;
-    filters: { search: string | null };
-}
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Redirects', href: '/admin/redirects' },
-];
+type Props = {
+    redirects: PaginationMeta & { data: RedirectRow[] };
+    filters: {
+        search: string | null;
+        orderby: string | null;
+        order: 'asc' | 'desc';
+    };
+};
 
 export default function RedirectsIndex({ redirects, filters }: Props) {
-    const { can } = usePermissions();
-    const canManage = can('redirects.manage');
+    const selection = useRowSelection(redirects.data.map((row) => row.id));
+    const [pendingDelete, setPendingDelete] = useState<number[] | null>(null);
+    const orderBy = filters.orderby ?? '';
 
-    function handleDelete(id: number) {
-        router.delete(`/admin/redirects/${id}`, { preserveScroll: true });
-    }
+    const confirmDelete = () => {
+        if (!pendingDelete) {
+            return;
+        }
+
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => selection.clear(),
+        };
+
+        if (pendingDelete.length === 1) {
+            router.visit(destroy(pendingDelete[0]), options);
+        } else {
+            router.visit(bulkDestroy(), {
+                ...options,
+                data: { ids: pendingDelete },
+            });
+        }
+    };
+
+    const bulkActions = [{ value: 'delete', label: 'Удалить' }];
+
+    const applyBulk = (action: string) => {
+        if (action === 'delete' && selection.selected.length > 0) {
+            setPendingDelete(selection.selected);
+        }
+    };
+
+    const header = (position: 'top' | 'bottom') => (
+        <tr>
+            <td className="check-column">
+                <label
+                    className="wp-screen-reader-text"
+                    htmlFor={`redirects-select-all-${position}`}
+                >
+                    Выделить все
+                </label>
+                <input
+                    id={`redirects-select-all-${position}`}
+                    type="checkbox"
+                    className="size-4 accent-[#2271b1]"
+                    checked={selection.allSelected}
+                    onChange={selection.toggleAll}
+                />
+            </td>
+            <th scope="col" className="column-primary">
+                <SortableHeader
+                    label="Исходный адрес"
+                    column="from"
+                    orderBy={orderBy}
+                    order={filters.order}
+                />
+            </th>
+            <th scope="col">Целевой адрес</th>
+            <th scope="col">Тип</th>
+            <th scope="col" className="w-28">
+                <SortableHeader
+                    label="Переходы"
+                    column="hits"
+                    orderBy={orderBy}
+                    order={filters.order}
+                    defaultOrder="desc"
+                />
+            </th>
+            <th scope="col">
+                <SortableHeader
+                    label="Последний переход"
+                    column="last_hit"
+                    orderBy={orderBy}
+                    order={filters.order}
+                    defaultOrder="desc"
+                />
+            </th>
+        </tr>
+    );
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Redirects" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <Heading
-                        title="Redirects"
-                        description="Map old URLs to new ones. Returned by the public site before routing."
-                    />
-                    {canManage && (
-                        <Button asChild>
-                            <Link href="/admin/redirects/create">New Redirect</Link>
-                        </Button>
-                    )}
-                </div>
+        <AppLayout>
+            <Head title="Редиректы" />
 
-                <SearchBar
-                    url="/admin/redirects"
-                    search={filters.search}
-                    placeholder="Search from or to path…"
+            <PageHeader
+                title="Редиректы"
+                action={{ label: 'Добавить редирект', href: create.url() }}
+                subtitle={
+                    filters.search
+                        ? `Результаты поиска: «${filters.search}»`
+                        : undefined
+                }
+            />
+            <p className="mt-1 text-[13px] text-[#50575e]">
+                Перенаправляют посетителей со старых адресов на новые — до того,
+                как сайт покажет страницу «не найдено».
+            </p>
+
+            <div className="mt-2 flex flex-wrap items-end justify-end gap-2">
+                <SearchBox
+                    label="Поиск редиректов"
+                    defaultValue={filters.search}
                 />
-
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-medium">From</th>
-                                <th className="px-4 py-3 text-left font-medium">To</th>
-                                <th className="px-4 py-3 text-left font-medium">Status</th>
-                                <th className="px-4 py-3 text-left font-medium">Hits</th>
-                                <th className="px-4 py-3 text-left font-medium">Last hit</th>
-                                <th className="px-4 py-3 text-right font-medium">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {redirects.data.map((row) => (
-                                <tr key={row.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3 font-mono text-xs">
-                                        {row.from_path}
-                                    </td>
-                                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                                        → {row.to_path}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="rounded bg-secondary px-2 py-0.5 text-xs">
-                                            {row.status_code}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {row.hits}
-                                    </td>
-                                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                                        {row.last_hit_at ?? '—'}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/admin/redirects/${row.id}/edit`}>
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            {canManage && (
-                                                <ConfirmButton
-                                                    title="Delete redirect?"
-                                                    description="The old URL will return 404 again."
-                                                    onConfirm={() => handleDelete(row.id)}
-                                                >
-                                                    Delete
-                                                </ConfirmButton>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {redirects.data.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={6}
-                                        className="px-4 py-8 text-center text-muted-foreground"
-                                    >
-                                        No redirects defined.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <Pagination meta={redirects} />
             </div>
+
+            <div className="tablenav">
+                <BulkActions
+                    actions={bulkActions}
+                    disabled={selection.selected.length === 0}
+                    onApply={applyBulk}
+                />
+                <TablePagination meta={redirects} />
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="wp-list-table">
+                    <thead>{header('top')}</thead>
+                    <tbody>
+                        {redirects.data.map((row) => (
+                            <tr
+                                key={row.id}
+                                className={cn(
+                                    selection.isSelected(row.id) &&
+                                        'is-selected',
+                                )}
+                            >
+                                <th scope="row" className="check-column">
+                                    <label
+                                        className="wp-screen-reader-text"
+                                        htmlFor={`redirect-${row.id}`}
+                                    >
+                                        Выбрать {row.from_path}
+                                    </label>
+                                    <input
+                                        id={`redirect-${row.id}`}
+                                        type="checkbox"
+                                        className="size-4 accent-[#2271b1]"
+                                        checked={selection.isSelected(row.id)}
+                                        onChange={() =>
+                                            selection.toggle(row.id)
+                                        }
+                                    />
+                                </th>
+                                <td className="column-primary">
+                                    <strong>
+                                        <Link
+                                            href={edit.url(row.id)}
+                                            className="row-title font-mono break-all"
+                                        >
+                                            {row.from_path}
+                                        </Link>
+                                    </strong>
+                                    <RowActions>
+                                        <RowAction>
+                                            <Link href={edit.url(row.id)}>
+                                                Изменить
+                                            </Link>
+                                        </RowAction>
+                                        <RowAction danger>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setPendingDelete([row.id])
+                                                }
+                                            >
+                                                Удалить
+                                            </button>
+                                        </RowAction>
+                                        <RowAction>
+                                            <a
+                                                href={row.from_path}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                Проверить
+                                            </a>
+                                        </RowAction>
+                                    </RowActions>
+                                </td>
+                                <td className="font-mono text-[12px] break-all">
+                                    → {row.to_path}
+                                </td>
+                                <td className="whitespace-nowrap">
+                                    {REDIRECT_TYPES[row.status_code] ??
+                                        row.status_code}
+                                </td>
+                                <td>{row.hits}</td>
+                                <td className="whitespace-nowrap">
+                                    {row.last_hit_at
+                                        ? formatDateTime(row.last_hit_at)
+                                        : '—'}
+                                </td>
+                            </tr>
+                        ))}
+                        {redirects.data.length === 0 && (
+                            <tr className="no-items">
+                                <td colSpan={6}>
+                                    {filters.search
+                                        ? 'Редиректы не найдены.'
+                                        : 'Редиректов пока нет.'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                    <tfoot>{header('bottom')}</tfoot>
+                </table>
+            </div>
+
+            <div className="tablenav">
+                <BulkActions
+                    actions={bulkActions}
+                    disabled={selection.selected.length === 0}
+                    onApply={applyBulk}
+                    idSuffix="bottom"
+                />
+                <TablePagination meta={redirects} />
+            </div>
+
+            <ConfirmDialog
+                open={pendingDelete !== null}
+                onOpenChange={(open) => !open && setPendingDelete(null)}
+                onConfirm={confirmDelete}
+                title={
+                    pendingDelete && pendingDelete.length > 1
+                        ? `Удалить выбранные редиректы (${pendingDelete.length})?`
+                        : 'Удалить редирект?'
+                }
+                description="Старые адреса снова будут открывать страницу «не найдено»."
+            />
         </AppLayout>
     );
 }

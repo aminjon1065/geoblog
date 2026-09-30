@@ -1,4 +1,5 @@
 import { Head } from '@inertiajs/react';
+import type { ReactElement } from 'react';
 import HeroBlock from '@/components/public/blocks/Hero';
 import RichTextBlock from '@/components/public/blocks/RichText';
 import { SeoHead } from '@/components/public/SeoHead';
@@ -38,7 +39,7 @@ interface Props {
  */
 const BLOCK_COMPONENTS: Record<
     string,
-    (block: BlockShape) => JSX.Element | null
+    (block: BlockShape) => ReactElement | null
 > = {
     hero: (b) => (
         <HeroBlock

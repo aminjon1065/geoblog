@@ -1,89 +1,43 @@
 import { Link } from '@inertiajs/react';
-import type { PropsWithChildren } from 'react';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useCurrentUrl } from '@/hooks/use-current-url';
-import { cn, toUrl } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
+import type { PropsWithChildren, ReactNode } from 'react';
+import { PageHeader } from '@/components/wp/page-header';
 import { edit } from '@/routes/profile';
-import { show } from '@/routes/two-factor';
-import { edit as editPassword } from '@/routes/user-password';
-import type { NavItem } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: edit(),
-        icon: null,
-    },
-    {
-        title: 'Password',
-        href: editPassword(),
-        icon: null,
-    },
-    {
-        title: 'Two-Factor Auth',
-        href: show(),
-        icon: null,
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-        icon: null,
-    },
-];
-
-export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { isCurrentUrl } = useCurrentUrl();
-
-    // When server-side rendering, we only render the layout on the client...
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
+/**
+ * The frame of the personal account screens (/settings/*), rendered inside
+ * the admin shell like WordPress's "Профиль": a plain page title, an
+ * optional intro and, on the secondary screens, a way back to the profile.
+ */
+export default function SettingsLayout({
+    title,
+    description,
+    backToProfile = true,
+    children,
+}: PropsWithChildren<{
+    title: string;
+    description?: ReactNode;
+    /** Show "← Вернуться к профилю" (every screen but the profile itself). */
+    backToProfile?: boolean;
+}>) {
     return (
-        <div className="px-4 py-6">
-            <Heading
-                title="Settings"
-                description="Manage your profile and account settings"
-            />
-
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav
-                        className="flex flex-col space-y-1 space-x-0"
-                        aria-label="Settings"
+        <>
+            <PageHeader title={title} />
+            {description && (
+                <p className="mt-1 max-w-3xl text-[13px] text-[#50575e]">
+                    {description}
+                </p>
+            )}
+            {backToProfile && (
+                <p className="mt-2 text-[13px]">
+                    <Link
+                        href={edit()}
+                        className="text-[#2271b1] hover:text-[#135e96]"
                     >
-                        {sidebarNavItems.map((item, index) => (
-                            <Button
-                                key={`${toUrl(item.href)}-${index}`}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentUrl(item.href),
-                                })}
-                            >
-                                <Link href={item.href}>
-                                    {item.icon && (
-                                        <item.icon className="h-4 w-4" />
-                                    )}
-                                    {item.title}
-                                </Link>
-                            </Button>
-                        ))}
-                    </nav>
-                </aside>
-
-                <Separator className="my-6 lg:hidden" />
-
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">
-                        {children}
-                    </section>
-                </div>
-            </div>
-        </div>
+                        ← Вернуться к профилю
+                    </Link>
+                </p>
+            )}
+            <div className="max-w-5xl">{children}</div>
+        </>
     );
 }

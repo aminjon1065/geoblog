@@ -15,7 +15,10 @@ interface PaginationProps {
     hideWhenSinglePage?: boolean;
 }
 
-export function Pagination({ meta, hideWhenSinglePage = true }: PaginationProps) {
+export function Pagination({
+    meta,
+    hideWhenSinglePage = true,
+}: PaginationProps) {
     if (hideWhenSinglePage && meta.last_page <= 1) {
         return null;
     }
@@ -23,7 +26,8 @@ export function Pagination({ meta, hideWhenSinglePage = true }: PaginationProps)
     return (
         <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-                Page {meta.current_page} of {meta.last_page} ({meta.total} total)
+                Страница {meta.current_page} из {meta.last_page} (всего:{' '}
+                {meta.total})
             </p>
             <div className="flex gap-2">
                 <Button
@@ -34,10 +38,10 @@ export function Pagination({ meta, hideWhenSinglePage = true }: PaginationProps)
                 >
                     {meta.prev_page_url ? (
                         <Link href={meta.prev_page_url} preserveScroll>
-                            Previous
+                            Назад
                         </Link>
                     ) : (
-                        <span>Previous</span>
+                        <span>Назад</span>
                     )}
                 </Button>
                 <Button
@@ -48,10 +52,10 @@ export function Pagination({ meta, hideWhenSinglePage = true }: PaginationProps)
                 >
                     {meta.next_page_url ? (
                         <Link href={meta.next_page_url} preserveScroll>
-                            Next
+                            Вперёд
                         </Link>
                     ) : (
-                        <span>Next</span>
+                        <span>Вперёд</span>
                     )}
                 </Button>
             </div>

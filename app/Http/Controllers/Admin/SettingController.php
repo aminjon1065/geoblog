@@ -11,6 +11,7 @@ use App\Services\Settings\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Lang;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,13 +45,14 @@ class SettingController extends Controller implements HasMiddleware
 
         $this->repository->setMany($values);
 
-        return back()->with('success', 'Settings updated.');
+        return back()->with('success', 'Настройки сохранены.');
     }
 
     /**
      * Render the catalog in a UI-friendly shape. We strip nothing — the catalog
      * already excludes secrets by living server-side; what makes it to the user is
-     * exactly what the admin form needs to render.
+     * exactly what the admin form needs to render. Labels come from
+     * lang/ru/settings.php when translated, else from the catalog.
      *
      * @return list<array{key: string, label: string, description: ?string, settings: list<array{
      *     key: string, type: string, label: string, help: ?string, is_public: bool
@@ -63,14 +65,15 @@ class SettingController extends Controller implements HasMiddleware
         foreach ($this->catalog->groups() as $groupKey => $group) {
             $out[] = [
                 'key' => $groupKey,
-                'label' => $group['label'],
-                'description' => $group['description'] ?? null,
+                'label' => $this->translated("settings.groups.{$groupKey}.label") ?? $group['label'],
+                'description' => $this->translated("settings.groups.{$groupKey}.description")
+                    ?? ($group['description'] ?? null),
                 'settings' => array_map(
                     fn (array $meta): array => [
                         'key' => $meta['key'],
                         'type' => $meta['type'],
-                        'label' => $meta['label'],
-                        'help' => $meta['help'] ?? null,
+                        'label' => $this->translated("settings.settings.{$meta['key']}.label") ?? $meta['label'],
+                        'help' => $this->translated("settings.settings.{$meta['key']}.help") ?? ($meta['help'] ?? null),
                         'is_public' => $meta['is_public'],
                     ],
                     $group['settings'],
@@ -79,5 +82,10 @@ class SettingController extends Controller implements HasMiddleware
         }
 
         return $out;
+    }
+
+    private function translated(string $key): ?string
+    {
+        return Lang::has($key) ? (string) __($key) : null;
     }
 }

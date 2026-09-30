@@ -48,3 +48,29 @@ test('correct password must be provided to update password', function () {
         ->assertSessionHasErrors('current_password')
         ->assertRedirect(route('user-password.edit'));
 });
+
+test('a password change flashes a russian confirmation', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->from(route('user-password.edit'))
+        ->put(route('user-password.update'), [
+            'current_password' => 'password',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])
+        ->assertSessionHas('success', 'Пароль изменён.');
+});
+
+test('a wrong current password is reported in russian', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->from(route('user-password.edit'))
+        ->put(route('user-password.update'), [
+            'current_password' => 'wrong-password',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])
+        ->assertSessionHasErrors(['current_password' => 'Неверный пароль.']);
+});

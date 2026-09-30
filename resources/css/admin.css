@@ -1,0 +1,607 @@
+/* ==========================================================================
+   Admin panel in the WordPress style.
+
+   The public site keeps its own palette (app.css :root). Everything under
+   `html.wp-admin` — the admin shell, its pages and the dialogs they open in
+   portals — is re-projected onto the default WordPress admin colour scheme,
+   so the shadcn primitives (Button, Input, Dialog…) look native there
+   without a second component set.
+   ========================================================================== */
+
+html.wp-admin {
+    --wp-theme: #2271b1;
+    --wp-theme-hover: #135e96;
+    --wp-theme-soft: #f0f6fc;
+    --wp-menu-bg: #1d2327;
+    --wp-menu-submenu-bg: #2c3338;
+    --wp-menu-text: #f0f0f1;
+    --wp-menu-icon: #a7aaad;
+    --wp-menu-highlight: #72aee6;
+    --wp-canvas: #f0f0f1;
+    --wp-text: #1d2327;
+    --wp-text-secondary: #50575e;
+    --wp-text-muted: #646970;
+    --wp-border: #c3c4c7;
+    --wp-border-light: #dcdcde;
+    --wp-input-border: #8c8f94;
+    --wp-row-alt: #f6f7f7;
+    --wp-success: #00a32a;
+    --wp-warning: #dba617;
+    --wp-error: #d63638;
+    --wp-info: #72aee6;
+    --wp-bar-height: 32px;
+    --wp-menu-width: 160px;
+    --wp-menu-folded-width: 36px;
+
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans,
+        Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+
+    --background: #ffffff;
+    --foreground: #1d2327;
+    --card: #ffffff;
+    --card-foreground: #1d2327;
+    --popover: #ffffff;
+    --popover-foreground: #1d2327;
+    --primary: #2271b1;
+    --primary-foreground: #ffffff;
+    --secondary: #f6f7f7;
+    --secondary-foreground: #2271b1;
+    --muted: #f6f7f7;
+    --muted-foreground: #646970;
+    --accent: #f0f0f1;
+    --accent-foreground: #1d2327;
+    --destructive: #d63638;
+    --destructive-foreground: #d63638;
+    --border: #dcdcde;
+    --input: #8c8f94;
+    --ring: #2271b1;
+    --radius: 0.25rem;
+
+    background-color: #f0f0f1;
+}
+
+html.wp-admin body {
+    background-color: #f0f0f1;
+    color: #3c434a;
+}
+
+/* Component classes live in the components layer, so Tailwind utilities
+   written next to them still win. */
+@layer components {
+    /* ---- page title ("wrap h1") --------------------------------------------- */
+    .wp-heading {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        padding: 9px 0 4px;
+    }
+    .wp-heading h1 {
+        margin: 0;
+        color: #1d2327;
+        font-size: 23px;
+        font-weight: 400;
+        line-height: 1.3;
+    }
+    .wp-page-title-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid #2271b1;
+        border-radius: 3px;
+        background: #f6f7f7;
+        color: #2271b1;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 2.15;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .wp-page-title-action:hover {
+        border-color: #0a4b78;
+        background: #f0f0f1;
+        color: #0a4b78;
+    }
+    .wp-page-title-action:focus-visible {
+        outline: 2px solid transparent;
+        box-shadow: 0 0 0 1px #2271b1;
+    }
+    .wp-heading-subtitle {
+        color: #50575e;
+        font-size: 14px;
+    }
+
+    /* ---- list table ---------------------------------------------------------- */
+    .wp-list-table {
+        width: 100%;
+        border: 1px solid #c3c4c7;
+        border-spacing: 0;
+        background: #ffffff;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+        font-size: 13px;
+        table-layout: auto;
+    }
+    .wp-list-table thead th,
+    .wp-list-table thead td,
+    .wp-list-table tfoot th,
+    .wp-list-table tfoot td {
+        padding: 8px 10px;
+        color: #2c3338;
+        font-weight: 400;
+        line-height: 1.4;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .wp-list-table thead th,
+    .wp-list-table thead td {
+        border-bottom: 1px solid #c3c4c7;
+    }
+    .wp-list-table tfoot th,
+    .wp-list-table tfoot td {
+        border-top: 1px solid #c3c4c7;
+    }
+    .wp-list-table tbody td,
+    .wp-list-table tbody th {
+        padding: 8px 10px;
+        color: #50575e;
+        line-height: 1.5;
+        vertical-align: top;
+    }
+    .wp-list-table tbody tr:nth-child(odd) {
+        background: #f6f7f7;
+    }
+    .wp-list-table tbody tr.is-selected {
+        background: #f0f6fc;
+    }
+    .wp-list-table .check-column {
+        width: 2.2em;
+        padding: 8px 0 0 3px;
+        vertical-align: top;
+    }
+    .wp-list-table tbody .check-column {
+        padding-top: 10px;
+    }
+    .wp-list-table .column-primary a.row-title {
+        color: #2271b1;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .wp-list-table .column-primary a.row-title:hover {
+        color: #135e96;
+    }
+    .wp-list-table .post-state {
+        color: #50575e;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .wp-list-table a {
+        color: #2271b1;
+    }
+    .wp-list-table a:hover {
+        color: #135e96;
+    }
+    .wp-list-table .sortable-header {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #2c3338;
+        text-decoration: none;
+    }
+    .wp-list-table .sortable-header:hover {
+        color: #2271b1;
+    }
+    .wp-list-table .sortable-header .sorting-indicator {
+        opacity: 0;
+        transition: opacity 0.1s ease;
+    }
+    .wp-list-table .sortable-header:hover .sorting-indicator,
+    .wp-list-table .sortable-header.is-sorted .sorting-indicator {
+        opacity: 1;
+    }
+    .wp-list-table .no-items td {
+        padding: 12px 10px;
+        color: #50575e;
+    }
+
+    /* Row actions appear on hover or keyboard focus, as in WordPress. */
+    .row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 6px;
+        padding: 2px 0 0;
+        color: #a7aaad;
+        font-size: 13px;
+        left: -9999em;
+        position: relative;
+    }
+    .wp-list-table tr:hover .row-actions,
+    .wp-list-table tr:focus-within .row-actions,
+    .row-actions.is-visible {
+        position: static;
+    }
+    .row-actions a,
+    .row-actions button {
+        border: 0;
+        background: none;
+        padding: 0;
+        color: #2271b1;
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .row-actions a:hover,
+    .row-actions button:hover {
+        color: #135e96;
+        text-decoration: underline;
+    }
+    .row-actions .is-danger a,
+    .row-actions .is-danger button {
+        color: #b32d2e;
+    }
+    .row-actions .is-danger a:hover,
+    .row-actions .is-danger button:hover {
+        color: #b32d2e;
+    }
+    /* Touch screens have no hover: WordPress shows the actions there. */
+    @media (max-width: 782px) {
+        .row-actions {
+            position: static;
+        }
+    }
+    .row-actions > span:not(:last-child)::after {
+        content: '|';
+        margin-left: 6px;
+        color: #a7aaad;
+    }
+
+    /* ---- views ("subsubsub") ------------------------------------------------- */
+    .subsubsub {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 0;
+        margin: 8px 0 0;
+        color: #646970;
+        font-size: 13px;
+    }
+    .subsubsub li:not(:last-child)::after {
+        content: '|';
+        margin: 0 6px;
+        color: #a7aaad;
+    }
+    .subsubsub a {
+        color: #2271b1;
+        text-decoration: none;
+    }
+    .subsubsub a:hover {
+        color: #135e96;
+    }
+    .subsubsub a.current {
+        color: #000000;
+        font-weight: 600;
+    }
+    .subsubsub .count {
+        color: #50575e;
+        font-weight: 400;
+    }
+
+    /* ---- tablenav (bulk actions, filters, pagination) ------------------------ */
+    .tablenav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 12px;
+        min-height: 30px;
+        margin: 6px 0 4px;
+        font-size: 13px;
+    }
+    .tablenav .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+    .tablenav-pages {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+        color: #50575e;
+    }
+    .tablenav-pages .displaying-num {
+        margin-right: 6px;
+    }
+    .tablenav-pages .page-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        min-height: 30px;
+        padding: 0 4px;
+        border: 1px solid #2271b1;
+        border-radius: 3px;
+        background: #f6f7f7;
+        color: #2271b1;
+        font-size: 16px;
+        line-height: 1;
+        text-decoration: none;
+    }
+    .tablenav-pages .page-button:hover {
+        border-color: #0a4b78;
+        background: #f0f0f1;
+        color: #0a4b78;
+    }
+    .tablenav-pages .page-button.is-disabled {
+        border-color: #dcdcde;
+        background: #f6f7f7;
+        color: #a7aaad;
+        cursor: default;
+        pointer-events: none;
+    }
+    .tablenav-pages .paging-input {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 4px;
+    }
+    .tablenav-pages .current-page {
+        width: 3.2em;
+        min-height: 30px;
+        border: 1px solid #8c8f94;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    /* ---- WordPress form controls used by list screens ------------------------ */
+    .wp-select,
+    .wp-input {
+        min-height: 30px;
+        padding: 0 8px;
+        border: 1px solid #8c8f94;
+        border-radius: 4px;
+        background-color: #ffffff;
+        color: #2c3338;
+        font-size: 14px;
+        line-height: 2;
+        box-shadow: 0 0 0 transparent;
+    }
+    .wp-select {
+        padding-right: 24px;
+        appearance: none;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E');
+        background-position: right 5px top 55%;
+        background-repeat: no-repeat;
+        background-size: 16px 16px;
+        cursor: pointer;
+    }
+    .wp-select:focus,
+    .wp-input:focus {
+        border-color: #2271b1;
+        outline: 2px solid transparent;
+        box-shadow: 0 0 0 1px #2271b1;
+    }
+    .wp-input:read-only {
+        background-color: #f0f0f1;
+    }
+    .wp-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid #2271b1;
+        border-radius: 3px;
+        background: #f6f7f7;
+        color: #2271b1;
+        font-size: 13px;
+        line-height: 2.15;
+        white-space: nowrap;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .wp-button:hover {
+        border-color: #0a4b78;
+        background: #f0f0f1;
+        color: #0a4b78;
+    }
+    .wp-button:focus-visible {
+        outline: 2px solid transparent;
+        box-shadow: 0 0 0 1px #2271b1;
+    }
+    .wp-button:disabled {
+        border-color: #dcdcde;
+        background: #f6f7f7;
+        color: #a7aaad;
+        cursor: default;
+    }
+    .wp-button.is-primary {
+        background: #2271b1;
+        border-color: #2271b1;
+        color: #ffffff;
+    }
+    .wp-button.is-primary:hover {
+        background: #135e96;
+        border-color: #135e96;
+        color: #ffffff;
+    }
+    .wp-button.is-primary:disabled {
+        background: #72aee6;
+        border-color: #72aee6;
+        color: #ffffff;
+    }
+    /* WordPress .button-small / .button-hero */
+    .wp-button.is-small {
+        min-height: 26px;
+        padding: 0 8px;
+        font-size: 11px;
+        line-height: 2.18;
+    }
+    .wp-button.is-hero {
+        min-height: 46px;
+        padding: 0 36px;
+        font-size: 14px;
+        line-height: 3.2;
+    }
+    .wp-button.is-link-danger {
+        border-color: transparent;
+        background: none;
+        color: #b32d2e;
+        text-decoration: underline;
+    }
+    .wp-button.is-link-danger:hover {
+        color: #b32d2e;
+        background: none;
+        border-color: transparent;
+    }
+    .wp-link-button {
+        border: 0;
+        background: none;
+        padding: 0;
+        color: #2271b1;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    .wp-link-button:hover {
+        color: #135e96;
+    }
+    .wp-link-button.is-danger {
+        color: #b32d2e;
+    }
+
+    /* ---- search box ---------------------------------------------------------- */
+    .search-box {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* ---- notices ------------------------------------------------------------- */
+    .wp-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 5px 0 15px;
+        padding: 1px 12px;
+        border: 1px solid #c3c4c7;
+        border-left-width: 4px;
+        background: #ffffff;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+        font-size: 13px;
+    }
+    .wp-notice p {
+        margin: 0.5em 0;
+        padding: 2px;
+    }
+    .wp-notice.is-success {
+        border-left-color: #00a32a;
+    }
+    .wp-notice.is-warning {
+        border-left-color: #dba617;
+    }
+    .wp-notice.is-error {
+        border-left-color: #d63638;
+    }
+    .wp-notice.is-info {
+        border-left-color: #72aee6;
+    }
+
+    /* ---- postbox (dashboard widgets, side boxes) ----------------------------- */
+    .postbox {
+        min-width: 0;
+        border: 1px solid #c3c4c7;
+        background: #ffffff;
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    }
+    .postbox-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #c3c4c7;
+    }
+    .postbox-header h2 {
+        margin: 0;
+        padding: 8px 12px;
+        color: #1d2327;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    .postbox-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        background: none;
+        color: #787c82;
+        cursor: pointer;
+    }
+    .postbox-toggle:hover {
+        color: #1d2327;
+    }
+    .postbox .inside {
+        padding: 0 12px 12px;
+        font-size: 13px;
+        line-height: 1.4em;
+    }
+    .postbox .inside:first-child,
+    .postbox .inside.has-top-padding {
+        padding-top: 12px;
+    }
+
+    /* ---- form table (settings-like screens) ---------------------------------- */
+    .form-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.5em;
+        font-size: 14px;
+    }
+    .form-table th {
+        width: 200px;
+        padding: 20px 10px 20px 0;
+        color: #1d2327;
+        font-weight: 600;
+        line-height: 1.3;
+        text-align: left;
+        vertical-align: top;
+    }
+    .form-table td {
+        padding: 15px 10px;
+        line-height: 1.3;
+        vertical-align: middle;
+    }
+    .form-table .description {
+        margin: 4px 0 0;
+        color: #646970;
+        font-size: 13px;
+    }
+    @media (max-width: 782px) {
+        .form-table th,
+        .form-table td {
+            display: block;
+            width: auto;
+            padding: 10px 0 0;
+        }
+    }
+
+    /* ---- screen-reader text -------------------------------------------------- */
+    .wp-screen-reader-text {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(1px, 1px, 1px, 1px);
+        border: 0;
+        word-wrap: normal;
+    }
+}

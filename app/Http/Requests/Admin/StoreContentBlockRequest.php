@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Cms\Blocks\BlockRegistry;
+use App\Cms\Blocks\BlockType;
 use App\Models\ContentPage;
-use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class StoreContentBlockRequest extends FormRequest
+class StoreContentBlockRequest extends ContentBlockFormRequest
 {
     public function authorize(): bool
     {
@@ -23,15 +24,17 @@ class StoreContentBlockRequest extends FormRequest
      */
     public function rules(): array
     {
-        $registry = app(BlockRegistry::class);
-        $known = $registry->keys();
-
         return [
-            'type' => ['required', 'string', 'in:'.implode(',', $known)],
-            'settings' => ['nullable', 'array'],
-            'translations' => ['nullable', 'array'],
-            'translations.*' => ['array'],
+            'type' => ['required', 'string', Rule::in(app(BlockRegistry::class)->keys())],
+            ...$this->blockRules(),
         ];
+    }
+
+    public function blockType(): ?BlockType
+    {
+        $type = $this->input('type');
+
+        return is_string($type) ? app(BlockRegistry::class)->get($type) : null;
     }
 
     /**
@@ -40,7 +43,9 @@ class StoreContentBlockRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'Unknown block type. Add it to the BlockRegistry before using it.',
+            ...parent::messages(),
+            'type.required' => 'Выберите тип блока.',
+            'type.in' => 'Неизвестный тип блока.',
         ];
     }
 }

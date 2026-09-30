@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Models\ContentPage;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Closure;
 
-class UpdateContentPageRequest extends FormRequest
+class UpdateContentPageRequest extends ContentPageFormRequest
 {
     public function authorize(): bool
     {
-        $target = $this->route('content_page');
+        $target = $this->targetPage();
 
-        return $target instanceof ContentPage
+        return $target !== null
             && ($this->user()?->can('update', $target) ?? false);
     }
 
@@ -23,19 +22,16 @@ class UpdateContentPageRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var ContentPage|null $target */
-        $target = $this->route('content_page');
-        $id = $target?->id;
+        $target = $this->targetPage();
 
         return [
             'parent_id' => [
                 'nullable',
                 'integer',
-                'exists:content_pages,id',
-                function ($attribute, $value, $fail) use ($target) {
-                    // Forbid self-parenting; the service walks the chain for deeper cycles.
-                    if ($target !== null && (int) $value === $target->id) {
-                        $fail('A page cannot be its own parent.');
+                $this->existingParentRule(),
+                function (string $attribute, mixed $value, Closure $fail) use ($target): void {
+                    if ($target !== null && $this->wouldNestIntoItself($target, (int) $value)) {
+                        $fail('Страницу нельзя вложить в неё саму или в её подстраницу.');
                     }
                 },
             ],
@@ -44,41 +40,30 @@ class UpdateContentPageRequest extends FormRequest
                 'string',
                 'max:191',
                 'regex:/^[a-z0-9\-]+$/',
-                Rule::unique('content_pages', 'slug')
-                    ->ignore($id)
-                    ->where(function ($q) {
-                        $parent = $this->input('parent_id');
-
-                        return $parent === null || $parent === ''
-                            ? $q->whereNull('parent_id')
-                            : $q->where('parent_id', (int) $parent);
-                    }),
+                $this->uniqueSlugRule($target?->id),
             ],
-            'status' => ['required', 'in:draft,published'],
-            'template' => ['nullable', 'string', 'max:64'],
-            'published_at' => ['nullable', 'date'],
-
-            'translations' => ['required', 'array'],
-            'translations.*.title' => ['nullable', 'string', 'max:255'],
-            'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
-            'translations.*.meta_description' => ['nullable', 'string', 'max:500'],
+            ...$this->sharedRules(),
         ];
     }
 
-    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
+    /**
+     * Walk up from the new parent: meeting the page itself on the way would
+     * make the tree a loop.
+     */
+    private function wouldNestIntoItself(ContentPage $page, int $parentId): bool
     {
-        $validator->after(function (\Illuminate\Contracts\Validation\Validator $validator): void {
-            $translations = (array) $this->input('translations', []);
-            $hasTitle = false;
-            foreach ($translations as $data) {
-                if (! empty($data['title'])) {
-                    $hasTitle = true;
-                    break;
-                }
+        $visited = [];
+        $cursorId = $parentId;
+
+        while ($cursorId !== 0 && ! isset($visited[$cursorId])) {
+            if ($cursorId === $page->id) {
+                return true;
             }
-            if (! $hasTitle) {
-                $validator->errors()->add('translations', 'At least one translation with a title is required.');
-            }
-        });
+
+            $visited[$cursorId] = true;
+            $cursorId = (int) ContentPage::withTrashed()->whereKey($cursorId)->value('parent_id');
+        }
+
+        return false;
     }
 }

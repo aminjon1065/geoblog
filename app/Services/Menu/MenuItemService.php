@@ -100,22 +100,26 @@ final class MenuItemService
         }
 
         if ($itemId !== null && $newParentId === $itemId) {
-            throw new RuntimeException('A menu item cannot be its own parent.');
+            throw new RuntimeException('Пункт меню не может быть родителем самого себя.');
         }
 
         $cursor = MenuItem::find($newParentId);
         while ($cursor !== null) {
             if ($itemId !== null && $cursor->id === $itemId) {
-                throw new RuntimeException('Cannot move an item into one of its own descendants.');
+                throw new RuntimeException('Нельзя вложить пункт меню в его собственный подпункт.');
             }
             // Defence in depth: don't follow a parent chain into another menu.
             if ($cursor->menu_id !== $menu->id) {
-                throw new RuntimeException('Cross-menu parent reference rejected.');
+                throw new RuntimeException('Родительский пункт должен быть в этом же меню.');
             }
             $cursor = $cursor->parent;
         }
     }
 
+    /**
+     * Upsert the labels the form filled and remove the ones it cleared;
+     * languages the form did not send keep their label.
+     */
     private function writeTranslations(MenuItem $item, MenuItemData $data): void
     {
         foreach ($data->translations as $locale => $label) {
@@ -125,8 +129,8 @@ final class MenuItemService
             );
         }
 
-        $item->translations()
-            ->whereNotIn('locale', array_keys($data->translations))
-            ->delete();
+        if ($data->clearedLocales !== []) {
+            $item->translations()->whereIn('locale', $data->clearedLocales)->delete();
+        }
     }
 }

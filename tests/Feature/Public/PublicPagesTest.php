@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Locale;
+use App\Models\Media;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     Locale::firstOrCreate(['code' => 'ru'], [
@@ -32,6 +35,61 @@ test('projects page returns successful response', function () {
 
 test('gallery page returns successful response', function () {
     $this->get(route('gallery', ['locale' => 'ru']))->assertOk();
+});
+
+test('gallery shows only images with their alt text and nothing internal', function () {
+    Media::create([
+        'disk' => 'public',
+        'path' => 'media/pamir.jpg',
+        'original_name' => 'IMG_0001.jpg',
+        'mime_type' => 'image/jpeg',
+        'size' => 2048,
+        'alt' => 'Памир на рассвете',
+        'caption' => 'Экспедиция 2026 года',
+        'width' => 1600,
+        'height' => 900,
+    ]);
+    Media::create([
+        'disk' => 'public',
+        'path' => 'media/report.pdf',
+        'mime_type' => 'application/pdf',
+        'size' => 4096,
+    ]);
+
+    $this->get(route('gallery', ['locale' => 'ru']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Public/Gallery')
+            ->has('images.data', 1)
+            ->has('images.links')
+            ->has('images.data.0', fn (Assert $image) => $image
+                ->whereType('id', 'integer')
+                ->where('url', Storage::disk('public')->url('media/pamir.jpg'))
+                ->where('alt', 'Памир на рассвете')
+                ->where('caption', 'Экспедиция 2026 года')
+                ->where('width', 1600)
+                ->where('height', 900)
+            )
+        );
+});
+
+test('gallery is paginated', function () {
+    foreach (range(1, 25) as $number) {
+        Media::create([
+            'disk' => 'public',
+            'path' => "media/photo-{$number}.jpg",
+            'mime_type' => 'image/jpeg',
+            'size' => 1024,
+        ]);
+    }
+
+    $this->get(route('gallery', ['locale' => 'ru', 'page' => 2]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('images.data', 1)
+            ->where('images.current_page', 2)
+            ->where('images.last_page', 2)
+        );
 });
 
 test('members page returns successful response', function () {

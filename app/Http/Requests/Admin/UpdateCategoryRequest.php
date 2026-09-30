@@ -2,29 +2,28 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use App\Models\Category;
 
-class UpdateCategoryRequest extends FormRequest
+/**
+ * "Изменить рубрику" → "Обновить".
+ */
+class UpdateCategoryRequest extends TermFormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('update', $this->route('category')) ?? false;
+        return $this->user()?->can('update', $this->editedTerm()) ?? false;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
+    protected function termClass(): string
     {
-        return [
-            'slug' => ['required', Rule::unique('categories')->ignore($this->route('category')->id), 'max:255', 'alpha_dash'],
-            'sort_order' => ['nullable', 'integer'],
-            'translations' => ['required', 'array'],
-            'translations.*.name' => ['required', 'string', 'max:255'],
-            'translations.*.description' => ['nullable', 'string'],
-        ];
+        return Category::class;
+    }
+
+    protected function editedTerm(): Category
+    {
+        /** @var Category $category */
+        $category = $this->route('category');
+
+        return $category;
     }
 }

@@ -139,3 +139,139 @@ test('flushing the resolver cache reflects DB writes', function () {
     $resolver->flush();
     expect($resolver->find('/early'))->toBeNull();
 });
+
+/* -------- Loop protection -------- */
+
+test('store rejects a redirect to its own path', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->post(route('admin.redirects.store'), [
+        'from_path' => '/Old-Page/',
+        'to_path' => '/old-page',
+        'status_code' => 301,
+    ])->assertSessionHasErrors([
+        'to_path' => 'Целевой адрес совпадает с исходным — получится бесконечный редирект.',
+    ]);
+
+    expect(Redirect::count())->toBe(0);
+});
+
+test('store rejects a same-site absolute URL or query variant of the source path', function (string $target) {
+    config(['app.url' => 'https://geo.tj']);
+    $this->actingAs(userWithRole('admin'));
+
+    $this->post(route('admin.redirects.store'), [
+        'from_path' => '/loop',
+        'to_path' => $target,
+        'status_code' => 301,
+    ])->assertSessionHasErrors('to_path');
+})->with([
+    'absolute url on the site host' => 'https://geo.tj/loop/',
+    'with a query string' => '/loop?utm=1',
+    'with a fragment' => '/LOOP#top',
+]);
+
+test('store rejects a two-step loop with a russian explanation', function () {
+    $this->actingAs(userWithRole('admin'));
+    Redirect::create(['from_path' => '/a', 'to_path' => '/b', 'status_code' => 301]);
+
+    $this->post(route('admin.redirects.store'), [
+        'from_path' => '/b',
+        'to_path' => '/a',
+        'status_code' => 301,
+    ])->assertSessionHasErrors([
+        'to_path' => 'С адреса «/a» уже настроен редирект обратно на «/b» — получится бесконечный цикл.',
+    ]);
+
+    expect(Redirect::count())->toBe(1);
+});
+
+test('store accepts chains that do not come back and external targets', function () {
+    $this->actingAs(userWithRole('admin'));
+    Redirect::create(['from_path' => '/a', 'to_path' => '/b', 'status_code' => 301]);
+
+    $this->post(route('admin.redirects.store'), [
+        'from_path' => '/b',
+        'to_path' => '/c',
+        'status_code' => 301,
+    ])->assertSessionHasNoErrors();
+
+    $this->post(route('admin.redirects.store'), [
+        'from_path' => '/partner',
+        'to_path' => 'https://partner.example.org/partner',
+        'status_code' => 302,
+    ])->assertSessionHasNoErrors();
+
+    expect(Redirect::count())->toBe(3);
+});
+
+test('update rejects turning a redirect into a loop but ignores its own row', function () {
+    $this->actingAs(userWithRole('admin'));
+    Redirect::create(['from_path' => '/a', 'to_path' => '/b', 'status_code' => 301]);
+    $redirect = Redirect::create(['from_path' => '/b', 'to_path' => '/c', 'status_code' => 301]);
+
+    $this->put(route('admin.redirects.update', $redirect), [
+        'from_path' => '/b',
+        'to_path' => '/a',
+        'status_code' => 301,
+    ])->assertSessionHasErrors('to_path');
+
+    $this->put(route('admin.redirects.update', $redirect), [
+        'from_path' => '/b',
+        'to_path' => '/b',
+        'status_code' => 301,
+    ])->assertSessionHasErrors('to_path');
+
+    $this->put(route('admin.redirects.update', $redirect), [
+        'from_path' => '/b',
+        'to_path' => '/d',
+        'status_code' => 302,
+    ])->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Редирект обновлён.');
+
+    expect($redirect->fresh()->to_path)->toBe('/d');
+});
+
+/* -------- Bulk delete -------- */
+
+test('admin can delete several redirects at once', function () {
+    $this->actingAs(userWithRole('admin'));
+    $first = Redirect::create(['from_path' => '/one', 'to_path' => '/x', 'status_code' => 301]);
+    $second = Redirect::create(['from_path' => '/two', 'to_path' => '/x', 'status_code' => 301]);
+    $kept = Redirect::create(['from_path' => '/three', 'to_path' => '/x', 'status_code' => 301]);
+
+    $resolver = app(RedirectResolver::class);
+    expect($resolver->find('/one'))->not->toBeNull();
+
+    $this->delete(route('admin.redirects.bulk-destroy'), ['ids' => [$first->id, $second->id]])
+        ->assertRedirect()
+        ->assertSessionHas('success', 'Удалено редиректов: 2.');
+
+    expect(Redirect::pluck('id')->all())->toBe([$kept->id]);
+    // The cached map was flushed along with the rows.
+    expect($resolver->find('/one'))->toBeNull();
+});
+
+test('bulk redirect delete requires redirects.manage', function () {
+    $redirect = Redirect::create(['from_path' => '/one', 'to_path' => '/x', 'status_code' => 301]);
+
+    $this->actingAs(userWithRole('editor'))
+        ->delete(route('admin.redirects.bulk-destroy'), ['ids' => [$redirect->id]])
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('redirects', ['id' => $redirect->id]);
+});
+
+test('redirect list sorts by hits when asked', function () {
+    $this->actingAs(userWithRole('admin'));
+    $popular = Redirect::create(['from_path' => '/popular', 'to_path' => '/x', 'status_code' => 301, 'hits' => 50]);
+    $quiet = Redirect::create(['from_path' => '/quiet', 'to_path' => '/x', 'status_code' => 301, 'hits' => 2]);
+
+    $this->get(route('admin.redirects.index', ['orderby' => 'hits', 'order' => 'asc']))
+        ->assertInertia(fn ($page) => $page
+            ->component('Admin/Redirects/Index')
+            ->where('redirects.data.0.id', $quiet->id)
+            ->where('redirects.data.1.id', $popular->id)
+            ->where('filters.orderby', 'hits')
+            ->where('filters.order', 'asc'));
+});

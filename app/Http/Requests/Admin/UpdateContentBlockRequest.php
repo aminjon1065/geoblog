@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Cms\Blocks\BlockRegistry;
+use App\Cms\Blocks\BlockType;
 use App\Models\ContentBlock;
 use App\Models\ContentPage;
-use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class UpdateContentBlockRequest extends FormRequest
+class UpdateContentBlockRequest extends ContentBlockFormRequest
 {
     public function authorize(): bool
     {
@@ -34,13 +36,31 @@ class UpdateContentBlockRequest extends FormRequest
      */
     public function rules(): array
     {
+        $block = $this->route('block');
+
         return [
-            // Type is fixed at creation — see ContentBlockService::update. We accept it in
-            // the payload only to keep the DTO factory uniform.
-            'type' => ['required', 'string'],
-            'settings' => ['nullable', 'array'],
-            'translations' => ['nullable', 'array'],
-            'translations.*' => ['array'],
+            // The type is fixed at creation (ContentBlockService::update); the editor
+            // sends it back unchanged, anything else is refused.
+            'type' => ['sometimes', 'string', Rule::in($block instanceof ContentBlock ? [$block->type] : [])],
+            ...$this->blockRules(),
+        ];
+    }
+
+    public function blockType(): ?BlockType
+    {
+        $block = $this->route('block');
+
+        return $block instanceof ContentBlock ? app(BlockRegistry::class)->get($block->type) : null;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            ...parent::messages(),
+            'type.in' => 'Тип блока нельзя изменить.',
         ];
     }
 }

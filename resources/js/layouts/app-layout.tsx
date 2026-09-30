@@ -1,8 +1,11 @@
-import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
+import AdminLayout from '@/layouts/admin/admin-layout';
 import type { AppLayoutProps } from '@/types';
 
-export default ({ children, breadcrumbs, ...props }: AppLayoutProps) => (
-    <AppLayoutTemplate breadcrumbs={breadcrumbs} {...props}>
-        {children}
-    </AppLayoutTemplate>
-);
+/**
+ * Layout of every admin screen. `breadcrumbs` is still accepted for the
+ * screens that pass it, but WordPress-style screens name themselves with
+ * their page title instead of a trail.
+ */
+export default function AppLayout({ children }: AppLayoutProps) {
+    return <AdminLayout>{children}</AdminLayout>;
+}

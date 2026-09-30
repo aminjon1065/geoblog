@@ -17,7 +17,7 @@ final class ContentPageSearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Pages';
+        return 'Страницы';
     }
 
     public function permission(): ?string

@@ -8,8 +8,10 @@ use App\DataTransferObjects\Menu\MenuData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreMenuRequest;
 use App\Http\Requests\Admin\UpdateMenuRequest;
+use App\Http\Resources\ContentPageResource;
 use App\Http\Resources\MenuResource;
 use App\Models\ContentPage;
+use App\Models\ContentPageTranslation;
 use App\Models\Locale;
 use App\Models\Menu;
 use App\Services\Menu\MenuService;
@@ -56,21 +58,34 @@ class MenuController extends Controller implements HasMiddleware
         $menu = $this->service->create(MenuData::fromRequest($request));
 
         return to_route('admin.menus.edit', $menu)
-            ->with('success', 'Menu created. Add items below.');
+            ->with('success', 'Меню создано. Теперь добавьте в него пункты.');
     }
 
     public function edit(Menu $menu): Response
     {
         return Inertia::render('Admin/Menus/Edit', [
             'menu' => MenuResource::forAdminEdit($menu),
+            // For the "Выберите меню для изменения" switcher above the editor.
+            'menus' => Menu::query()->orderBy('name')->get(['id', 'name', 'slug']),
             'locales' => Locale::where('is_active', true)->orderBy('sort_order')->get(),
-            // Content page options for the "link to a page" picker. Capped at a sane
-            // number; if a site grows past this, swap for a search-as-you-type picker.
+            // Content page options for the "link to a page" picker, with their titles
+            // in every language so a new item gets the page's title as its label.
+            // Capped at a sane number; if a site grows past this, swap for a
+            // search-as-you-type picker.
             'contentPages' => ContentPage::query()
+                ->with('translations')
                 ->orderBy('slug')
                 ->limit(200)
-                ->get(['id', 'slug'])
-                ->map(fn (ContentPage $p): array => ['id' => $p->id, 'slug' => $p->slug])
+                ->get(['id', 'slug', 'status', 'parent_id'])
+                ->map(fn (ContentPage $page): array => [
+                    'id' => $page->id,
+                    'slug' => $page->slug,
+                    'status' => $page->status,
+                    'title' => ContentPageResource::title($page),
+                    'titles' => $page->translations
+                        ->mapWithKeys(fn (ContentPageTranslation $translation): array => [$translation->locale => $translation->title])
+                        ->all(),
+                ])
                 ->all(),
         ]);
     }
@@ -79,13 +94,13 @@ class MenuController extends Controller implements HasMiddleware
     {
         $this->service->update($menu, MenuData::fromRequest($request));
 
-        return back()->with('success', 'Menu updated.');
+        return to_route('admin.menus.edit', $menu)->with('success', 'Меню сохранено.');
     }
 
     public function destroy(Menu $menu): RedirectResponse
     {
         $this->service->delete($menu);
 
-        return to_route('admin.menus.index')->with('success', 'Menu deleted.');
+        return to_route('admin.menus.index')->with('success', 'Меню удалено.');
     }
 }

@@ -19,9 +19,9 @@ test('hreflang alternates include every active locale plus x-default', function 
     $alternates = SeoBuilder::alternates($request, ['en', 'ru', 'tj']);
 
     expect($alternates)->toHaveCount(4)
-        ->and(collect($alternates)->pluck('locale')->all())->toBe(['en', 'ru', 'tj', 'x-default'])
+        ->and(collect($alternates)->pluck('locale')->all())->toBe(['en', 'ru', 'tg', 'x-default'])
         ->and(collect($alternates)->firstWhere('locale', 'en')['url'])->toBe('http://example.test/en/news/some-post')
-        ->and(collect($alternates)->firstWhere('locale', 'tj')['url'])->toBe('http://example.test/tj/news/some-post')
+        ->and(collect($alternates)->firstWhere('locale', 'tg')['url'])->toBe('http://example.test/tj/news/some-post')
         ->and(collect($alternates)->firstWhere('locale', 'x-default')['url'])->toBe('http://example.test/en/news/some-post');
 });
 
@@ -154,6 +154,7 @@ test('sitemap includes xhtml:link hreflang alternates', function () {
         ->toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"')
         ->toContain('<xhtml:link rel="alternate" hreflang="en"')
         ->toContain('<xhtml:link rel="alternate" hreflang="ru"')
-        ->toContain('<xhtml:link rel="alternate" hreflang="tj"')
+        ->toMatch('#<xhtml:link rel="alternate" hreflang="tg" href="[^"]+/tj["/]#')
+        ->not->toContain('hreflang="tj"')
         ->toContain('<xhtml:link rel="alternate" hreflang="x-default"');
 });

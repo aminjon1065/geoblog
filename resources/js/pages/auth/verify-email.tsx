@@ -1,8 +1,10 @@
-// Components
-import { Form, Head } from '@inertiajs/react';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { Form, Head, Link } from '@inertiajs/react';
+import {
+    LoginBox,
+    LoginMessage,
+    LoginNav,
+    loginButtonClass,
+} from '@/layouts/auth/auth-simple-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
@@ -10,35 +12,43 @@ import { send } from '@/routes/verification';
 export default function VerifyEmail({ status }: { status?: string }) {
     return (
         <AuthLayout
-            title="Verify email"
-            description="Please verify your email address by clicking on the link we just emailed to you."
+            title="Подтверждение e-mail"
+            description="Спасибо за регистрацию! Чтобы продолжить, подтвердите адрес e-mail: перейдите по ссылке из письма, которое мы только что отправили."
         >
-            <Head title="Email verification" />
+            <Head title="Подтверждение e-mail" />
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
-                </div>
+                <LoginMessage type="success">
+                    Новая ссылка для подтверждения отправлена на e-mail,
+                    указанный при регистрации.
+                </LoginMessage>
             )}
 
-            <Form {...send.form()} className="space-y-6 text-center">
-                {({ processing }) => (
-                    <>
-                        <Button disabled={processing} variant="secondary">
-                            {processing && <Spinner />}
-                            Resend verification email
-                        </Button>
+            <LoginBox>
+                <p className="mb-4 text-[13px]">
+                    Письмо не пришло? Проверьте папку «Спам» или отправьте его
+                    ещё раз.
+                </p>
+                <Form {...send.form()}>
+                    {({ processing }) => (
+                        <div className="flex justify-end">
+                            <button
+                                type="submit"
+                                className={loginButtonClass}
+                                disabled={processing}
+                            >
+                                Отправить письмо ещё раз
+                            </button>
+                        </div>
+                    )}
+                </Form>
+            </LoginBox>
 
-                        <TextLink
-                            href={logout()}
-                            className="mx-auto block text-sm"
-                        >
-                            Log out
-                        </TextLink>
-                    </>
-                )}
-            </Form>
+            <LoginNav>
+                <Link href={logout()} as="button" className="cursor-pointer">
+                    Выйти
+                </Link>
+            </LoginNav>
         </AuthLayout>
     );
 }

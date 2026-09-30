@@ -5,11 +5,11 @@ namespace App\Providers;
 use App\Cms\Blocks\BlockRegistry;
 use App\Cms\Blocks\HeroBlock;
 use App\Cms\Blocks\RichTextBlock;
+use App\Cms\Widgets\ActivityWidget;
+use App\Cms\Widgets\AtAGlanceWidget;
 use App\Cms\Widgets\FeaturedPostsWidget;
+use App\Cms\Widgets\QuickDraftWidget;
 use App\Cms\Widgets\RecentActivityWidget;
-use App\Cms\Widgets\RecentContactsWidget;
-use App\Cms\Widgets\RecentPostsWidget;
-use App\Cms\Widgets\StatsWidget;
 use App\Cms\Widgets\WidgetRegistry;
 use App\Listeners\LogAuthActivity;
 use App\Models\User;
@@ -77,16 +77,16 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the dashboard widget catalog (Phase 8). Widgets render in this
-     * order on the dashboard by default; a future per-user layout system can
-     * override.
+     * Register the dashboard widget catalog («Консоль»). Widgets render in this
+     * order, flowing into the dashboard's columns as on WordPress: «На виду»
+     * and «Активность» first, then «Быстрый черновик» and the rest.
      */
     protected function registerDashboardWidgets(): void
     {
         $registry = $this->app->make(WidgetRegistry::class);
-        $registry->register(new StatsWidget);
-        $registry->register(new RecentPostsWidget);
-        $registry->register(new RecentContactsWidget);
+        $registry->register(new AtAGlanceWidget);
+        $registry->register(new ActivityWidget);
+        $registry->register(new QuickDraftWidget);
         $registry->register(new FeaturedPostsWidget);
         $registry->register(new RecentActivityWidget);
     }

@@ -1,5 +1,6 @@
 import { router } from '@inertiajs/react';
-import { FormEvent, ReactNode, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -19,7 +20,7 @@ interface SearchBarProps {
     selects?: SelectFilter[];
     /** Placeholder for the freeform input. */
     placeholder?: string;
-    /** Slot for additional right-hand controls (e.g., a "New" button). */
+    /** Slot for additional right-hand controls (e.g., a "Добавить" button). */
     children?: ReactNode;
 }
 
@@ -27,12 +28,12 @@ export function SearchBar({
     url,
     search,
     selects = [],
-    placeholder = 'Search…',
+    placeholder = 'Поиск…',
     children,
 }: SearchBarProps) {
     const [searchValue, setSearchValue] = useState(search ?? '');
-    const [selectState, setSelectState] = useState<Record<string, string>>(
-        () => Object.fromEntries(selects.map((s) => [s.name, s.value])),
+    const [selectState, setSelectState] = useState<Record<string, string>>(() =>
+        Object.fromEntries(selects.map((s) => [s.name, s.value])),
     );
 
     function submit(e: FormEvent) {
@@ -44,7 +45,11 @@ export function SearchBar({
         setSearchValue('');
         const cleared = Object.fromEntries(selects.map((s) => [s.name, '']));
         setSelectState(cleared);
-        router.get(url, {}, { preserveState: true, preserveScroll: true, replace: true });
+        router.get(
+            url,
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     }
 
     function onSelectChange(name: string, value: string) {
@@ -75,9 +80,12 @@ export function SearchBar({
             onSubmit={submit}
             className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3"
         >
-            <div className="flex-1 min-w-[200px]">
-                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="search">
-                    Search
+            <div className="min-w-[200px] flex-1">
+                <label
+                    className="mb-1 block text-xs text-muted-foreground"
+                    htmlFor="search"
+                >
+                    Поиск
                 </label>
                 <Input
                     id="search"
@@ -98,10 +106,12 @@ export function SearchBar({
                     <select
                         id={select.name}
                         value={selectState[select.name] ?? ''}
-                        onChange={(e) => onSelectChange(select.name, e.target.value)}
+                        onChange={(e) =>
+                            onSelectChange(select.name, e.target.value)
+                        }
                         className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                     >
-                        <option value="">Any</option>
+                        <option value="">Все</option>
                         {select.options.map((opt) => (
                             <option key={opt.value} value={opt.value}>
                                 {opt.label}
@@ -113,10 +123,15 @@ export function SearchBar({
 
             <div className="flex gap-2">
                 <Button type="submit" size="sm">
-                    Filter
+                    Фильтр
                 </Button>
-                <Button type="button" size="sm" variant="outline" onClick={reset}>
-                    Reset
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={reset}
+                >
+                    Сбросить
                 </Button>
             </div>
 

@@ -1,68 +1,57 @@
 import { Link } from '@inertiajs/react';
-import { Activity } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { index as auditIndex } from '@/routes/admin/audit';
 
-interface ActivityRow {
+type ActivityRow = {
     id: number;
-    log_name: string | null;
-    event: string | null;
-    description: string | null;
-    subject_type: string | null;
-    causer: string | null;
-    created_at: string | null;
-}
+    /** Who did it; «Система» or «Гость» when nobody signed in. */
+    causer: string;
+    /** "изменил(а) запись #12". */
+    action: string;
+    /** "5 минут назад". */
+    ago: string | null;
+    date: string | null;
+};
 
+/** «Журнал действий»: the latest audit log entries in words. */
 export default function RecentActivityWidget({
     data,
 }: {
     data: { activities: ActivityRow[] };
 }) {
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        Recent activity
-                    </CardTitle>
-                    <Link
-                        href="/admin/audit"
-                        className="text-sm text-muted-foreground hover:text-foreground"
-                    >
-                        Full log
-                    </Link>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {data.activities.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                        Активности пока нет.
-                    </p>
-                ) : (
-                    <ul className="space-y-3 text-sm">
-                        {data.activities.map((row) => (
-                            <li key={row.id} className="flex flex-col gap-0.5">
-                                <span className="truncate">
-                                    <span className="font-medium">
-                                        {row.causer ?? 'System'}
-                                    </span>{' '}
-                                    <span className="text-muted-foreground">
-                                        {row.event ?? row.description ?? ''}
-                                    </span>{' '}
-                                    {row.subject_type && (
-                                        <span className="rounded bg-secondary px-1.5 py-0.5 text-xs">
-                                            {row.subject_type}
-                                        </span>
-                                    )}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    {row.created_at ?? ''}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </CardContent>
-        </Card>
+        <>
+            {data.activities.length === 0 ? (
+                <p className="text-[#646970]">В журнале пока нет записей.</p>
+            ) : (
+                <ul className="flex flex-col gap-2">
+                    {data.activities.map((row) => (
+                        <li key={row.id} className="flex flex-col">
+                            <span className="text-[#3c434a]">
+                                <strong className="font-semibold text-[#1d2327]">
+                                    {row.causer}
+                                </strong>{' '}
+                                {row.action}
+                            </span>
+                            {row.ago && (
+                                <time
+                                    dateTime={row.date ?? undefined}
+                                    className="text-[12px] text-[#646970]"
+                                >
+                                    {row.ago}
+                                </time>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <p className="-mx-3 mt-3 -mb-3 border-t border-[#f0f0f1] bg-[#f6f7f7] px-3 py-2.5">
+                <Link
+                    href={auditIndex.url()}
+                    className="text-[#2271b1] hover:text-[#135e96]"
+                >
+                    Весь журнал действий
+                </Link>
+            </p>
+        </>
     );
 }

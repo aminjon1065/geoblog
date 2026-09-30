@@ -121,3 +121,85 @@ test('Inertia share exposes public settings and a name backed by site_name', fun
             ->where('name', 'Geoblog Demo')
         );
 });
+
+test('the google analytics id must be a bare measurement id', function (string $value) {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->patch(route('admin.settings.update'), [
+        'values' => ['seo_google_analytics_id' => $value],
+    ])->assertSessionHasErrors('values.seo_google_analytics_id');
+
+    expect(app(SettingsRepository::class)->get('seo_google_analytics_id'))->toBe('');
+})->with([
+    'script injection' => "G-ABC'});alert(document.cookie);//",
+    'closing tag' => 'G-1</script><script>alert(1)</script>',
+    'lower case' => 'g-abc123',
+    'universal analytics id' => 'UA-12345-1',
+    'surrounding spaces inside' => 'G-ABC 123',
+]);
+
+test('a valid google analytics id is saved and can be cleared again', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->patch(route('admin.settings.update'), [
+        'values' => ['seo_google_analytics_id' => 'G-AB12CD34EF'],
+    ])->assertSessionHasNoErrors();
+
+    expect(app(SettingsRepository::class)->get('seo_google_analytics_id'))->toBe('G-AB12CD34EF');
+
+    $this->patch(route('admin.settings.update'), [
+        'values' => ['seo_google_analytics_id' => ''],
+    ])->assertSessionHasNoErrors();
+
+    expect(app(SettingsRepository::class)->get('seo_google_analytics_id'))->toBeNull();
+});
+
+test('the google analytics error message is in russian', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->patch(route('admin.settings.update'), [
+        'values' => ['seo_google_analytics_id' => 'nope'],
+    ])->assertSessionHasErrors([
+        'values.seo_google_analytics_id' => 'Идентификатор Google Analytics должен иметь вид G-XXXXXXXXXX: латинская G, дефис, затем заглавные латинские буквы и цифры.',
+    ]);
+});
+
+test('url settings accept http(s) addresses and site-root paths only', function (string $value, bool $valid) {
+    $this->actingAs(userWithRole('admin'));
+
+    $response = $this->patch(route('admin.settings.update'), [
+        'values' => ['logo_url' => $value],
+    ]);
+
+    $valid
+        ? $response->assertSessionHasNoErrors()
+        : $response->assertSessionHasErrors('values.logo_url');
+})->with([
+    'https address' => ['https://cdn.geo.tj/logo.svg', true],
+    'site-root path' => ['/images/logo.svg', true],
+    'protocol-relative address' => ['//evil.example/logo.svg', false],
+    'javascript scheme' => ['javascript:alert(1)', false],
+    'ftp address' => ['ftp://files.geo.tj/logo.svg', false],
+    'relative path' => ['images/logo.svg', false],
+]);
+
+test('settings screen labels and flash are in russian', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->get(route('admin.settings.edit'))
+        ->assertInertia(fn ($page) => $page
+            ->where('groups.0.key', 'general')
+            ->where('groups.0.label', 'Общие')
+            ->where('groups.0.settings.0.key', 'site_name')
+            ->where('groups.0.settings.0.label', 'Название сайта'));
+
+    $this->patch(route('admin.settings.update'), [
+        'values' => ['site_name' => 'АГТ'],
+    ])->assertSessionHas('success', 'Настройки сохранены.');
+
+    $this->patch(route('admin.settings.update'), [
+        'values' => ['contact_email' => 'not-an-email'],
+    ])->assertSessionHasErrors([
+        'values.contact_email' => 'Значение поля «E-mail» должно быть действительным адресом электронной почты.',
+    ]);
+});

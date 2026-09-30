@@ -1,114 +1,113 @@
-import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { Form, Head, Link } from '@inertiajs/react';
+import {
+    LoginBox,
+    LoginErrors,
+    LoginField,
+    LoginNav,
+    LoginPasswordInput,
+    loginButtonClass,
+    loginInputClass,
+} from '@/layouts/auth/auth-simple-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
+import { request } from '@/routes/password';
 import { store } from '@/routes/register';
 
 export default function Register() {
     return (
         <AuthLayout
-            title="Create an account"
-            description="Enter your details below to create your account"
+            title="Регистрация"
+            description="Зарегистрироваться на этом сайте"
         >
-            <Head title="Register" />
+            <Head title="Регистрация" />
+
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-6"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
+                        <LoginErrors errors={errors} />
+
+                        <LoginBox>
+                            <LoginField id="name" label="Имя">
+                                <input
                                     id="name"
                                     type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="name"
                                     name="name"
-                                    placeholder="Full name"
+                                    className={loginInputClass}
+                                    autoComplete="name"
+                                    autoFocus
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.name) || undefined
+                                    }
                                 />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
-                            </div>
+                            </LoginField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
+                            <LoginField id="email" label="E-mail">
+                                <input
                                     id="email"
                                     type="email"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="email"
                                     name="email"
-                                    placeholder="email@example.com"
+                                    className={loginInputClass}
+                                    autoComplete="email"
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.email) || undefined
+                                    }
                                 />
-                                <InputError message={errors.email} />
-                            </div>
+                            </LoginField>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input
+                            <LoginField id="password" label="Пароль">
+                                <LoginPasswordInput
                                     id="password"
-                                    type="password"
-                                    required
-                                    tabIndex={3}
-                                    autoComplete="new-password"
                                     name="password"
-                                    placeholder="Password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    required
-                                    tabIndex={4}
                                     autoComplete="new-password"
-                                    name="password_confirmation"
-                                    placeholder="Confirm password"
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.password) || undefined
+                                    }
                                 />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                            </LoginField>
 
-                            <Button
-                                type="submit"
-                                className="mt-2 w-full"
-                                tabIndex={5}
-                                data-test="register-user-button"
+                            <LoginField
+                                id="password_confirmation"
+                                label="Подтверждение пароля"
                             >
-                                {processing && <Spinner />}
-                                Create account
-                            </Button>
-                        </div>
+                                <LoginPasswordInput
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    autoComplete="new-password"
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.password_confirmation) ||
+                                        undefined
+                                    }
+                                />
+                            </LoginField>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={6}>
-                                Log in
-                            </TextLink>
-                        </div>
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    className={loginButtonClass}
+                                    disabled={processing}
+                                    data-test="register-user-button"
+                                >
+                                    Регистрация
+                                </button>
+                            </div>
+                        </LoginBox>
                     </>
                 )}
             </Form>
+
+            <LoginNav>
+                <Link href={login()}>Войти</Link>
+                <span aria-hidden>|</span>
+                <Link href={request()}>Забыли пароль?</Link>
+            </LoginNav>
         </AuthLayout>
     );
 }

@@ -94,3 +94,40 @@ test('role update clears the spatie permission cache', function () {
     expect($target->can('posts.viewAny'))->toBeFalse();
     expect($target->can('admin-panel.access'))->toBeTrue();
 });
+
+test('roles list names the roles in russian, most powerful first', function () {
+    $this->actingAs(userWithRole('super_admin'));
+
+    $this->get(route('admin.roles.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('roles.0.name', 'super_admin')
+            ->where('roles.0.label', 'Суперадминистратор')
+            ->where('roles.1.name', 'admin')
+            ->where('roles.1.label', 'Администратор')
+            ->where('roles.4.name', 'moderator')
+            ->where('roles.4.label', 'Модератор'));
+});
+
+test('role edit screen groups permissions in menu order with russian labels', function () {
+    $editor = Role::findByName('editor', 'web');
+    $this->actingAs(userWithRole('super_admin'));
+
+    $this->get(route('admin.roles.edit', $editor))
+        ->assertInertia(fn ($page) => $page
+            ->where('role.label', 'Редактор')
+            ->where('permissionGroups.0.group', 'admin-panel')
+            ->where('permissionGroups.0.label', 'Панель управления')
+            ->where('permissionGroups.1.group', 'posts')
+            ->where('permissionGroups.1.label', 'Записи')
+            ->where('permissionGroups.1.permissions.0.name', 'posts.viewAny')
+            ->where('permissionGroups.1.permissions.0.label', 'Просмотр записей'));
+});
+
+test('saving role permissions flashes a russian confirmation', function () {
+    $editor = Role::findByName('editor', 'web');
+    $this->actingAs(userWithRole('super_admin'));
+
+    $this->put(route('admin.roles.update', $editor), [
+        'permissions' => ['admin-panel.access'],
+    ])->assertSessionHas('success', 'Права роли обновлены.');
+});

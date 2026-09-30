@@ -91,9 +91,10 @@ test('authenticated user can delete media', function () {
     $this->delete(route('admin.media.destroy', $media))
         ->assertRedirect();
 
-    // Media uses SoftDeletes (Phase 3) so the row stays in the table with deleted_at set,
-    // but the underlying file on disk is gone immediately.
-    $this->assertSoftDeleted('media', ['id' => $media->id]);
+    // "Удалить навсегда": no trash — the row is gone together with the file, so it
+    // can never be restored pointing at a missing file.
+    $this->assertDatabaseMissing('media', ['id' => $media->id]);
+    expect(Media::withTrashed()->find($media->id))->toBeNull();
     Storage::disk('public')->assertMissing($path);
 });
 

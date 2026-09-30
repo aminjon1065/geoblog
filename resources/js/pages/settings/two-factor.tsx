@@ -1,28 +1,18 @@
 import { Form, Head } from '@inertiajs/react';
-import { ShieldBan, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import Heading from '@/components/heading';
+import { FormRow, FormTable } from '@/components/admin/form-table';
 import TwoFactorRecoveryCodes from '@/components/two-factor-recovery-codes';
 import TwoFactorSetupModal from '@/components/two-factor-setup-modal';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Notice } from '@/components/wp/notice';
 import { useTwoFactorAuth } from '@/hooks/use-two-factor-auth';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-import { disable, enable, show } from '@/routes/two-factor';
-import type { BreadcrumbItem } from '@/types';
+import { disable, enable } from '@/routes/two-factor';
 
 type Props = {
     requiresConfirmation?: boolean;
     twoFactorEnabled?: boolean;
 };
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Two-Factor Authentication',
-        href: show.url(),
-    },
-];
 
 export default function TwoFactor({
     requiresConfirmation = false,
@@ -41,100 +31,96 @@ export default function TwoFactor({
     const [showSetupModal, setShowSetupModal] = useState<boolean>(false);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Two-Factor Authentication" />
+        <AppLayout>
+            <Head title="Двухфакторная аутентификация" />
 
-            <h1 className="sr-only">Two-Factor Authentication Settings</h1>
+            <SettingsLayout
+                title="Двухфакторная аутентификация"
+                description="Второй шаг входа: после пароля нужно ввести одноразовый код из приложения-аутентификатора (Google Authenticator, 1Password и т. п.). Так учётную запись не взломать одним украденным паролем."
+            >
+                {twoFactorEnabled ? (
+                    <Notice type="success" className="mt-4">
+                        <p>Двухфакторная аутентификация включена.</p>
+                    </Notice>
+                ) : (
+                    <Notice type="warning" className="mt-4">
+                        <p>Двухфакторная аутентификация выключена.</p>
+                    </Notice>
+                )}
 
-            <SettingsLayout>
-                <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title="Two-Factor Authentication"
-                        description="Manage your two-factor authentication settings"
-                    />
+                <FormTable>
                     {twoFactorEnabled ? (
-                        <div className="flex flex-col items-start justify-start space-y-4">
-                            <Badge variant="default">Enabled</Badge>
-                            <p className="text-muted-foreground">
-                                With two-factor authentication enabled, you will
-                                be prompted for a secure, random pin during
-                                login, which you can retrieve from the
-                                TOTP-supported application on your phone.
-                            </p>
-
-                            <TwoFactorRecoveryCodes
-                                recoveryCodesList={recoveryCodesList}
-                                fetchRecoveryCodes={fetchRecoveryCodes}
-                                errors={errors}
-                            />
-
-                            <div className="relative inline">
+                        <>
+                            <FormRow label="Коды восстановления">
+                                <TwoFactorRecoveryCodes
+                                    recoveryCodesList={recoveryCodesList}
+                                    fetchRecoveryCodes={fetchRecoveryCodes}
+                                    errors={errors}
+                                />
+                            </FormRow>
+                            <FormRow
+                                label="Отключение"
+                                description="После отключения для входа будет достаточно пароля."
+                            >
                                 <Form {...disable.form()}>
                                     {({ processing }) => (
-                                        <Button
-                                            variant="destructive"
+                                        <button
                                             type="submit"
+                                            className="wp-button is-link-danger px-0!"
                                             disabled={processing}
                                         >
-                                            <ShieldBan /> Disable 2FA
-                                        </Button>
+                                            Отключить двухфакторную
+                                            аутентификацию
+                                        </button>
                                     )}
                                 </Form>
-                            </div>
-                        </div>
+                            </FormRow>
+                        </>
                     ) : (
-                        <div className="flex flex-col items-start justify-start space-y-4">
-                            <Badge variant="destructive">Disabled</Badge>
-                            <p className="text-muted-foreground">
-                                When you enable two-factor authentication, you
-                                will be prompted for a secure pin during login.
-                                This pin can be retrieved from a TOTP-supported
-                                application on your phone.
-                            </p>
-
-                            <div>
-                                {hasSetupData ? (
-                                    <Button
-                                        onClick={() => setShowSetupModal(true)}
-                                    >
-                                        <ShieldCheck />
-                                        Continue Setup
-                                    </Button>
-                                ) : (
-                                    <Form
-                                        {...enable.form()}
-                                        onSuccess={() =>
-                                            setShowSetupModal(true)
-                                        }
-                                    >
-                                        {({ processing }) => (
-                                            <Button
-                                                type="submit"
-                                                disabled={processing}
-                                            >
-                                                <ShieldCheck />
-                                                Enable 2FA
-                                            </Button>
-                                        )}
-                                    </Form>
-                                )}
-                            </div>
-                        </div>
+                        <FormRow
+                            label="Подключение"
+                            description="Понадобится телефон с приложением-аутентификатором: вы отсканируете QR-код и подтвердите подключение кодом из приложения."
+                        >
+                            {hasSetupData ? (
+                                <button
+                                    type="button"
+                                    className="wp-button is-primary"
+                                    onClick={() => setShowSetupModal(true)}
+                                >
+                                    Продолжить настройку
+                                </button>
+                            ) : (
+                                <Form
+                                    {...enable.form()}
+                                    onSuccess={() => setShowSetupModal(true)}
+                                >
+                                    {({ processing }) => (
+                                        <button
+                                            type="submit"
+                                            className="wp-button is-primary"
+                                            disabled={processing}
+                                        >
+                                            Включить двухфакторную
+                                            аутентификацию
+                                        </button>
+                                    )}
+                                </Form>
+                            )}
+                        </FormRow>
                     )}
+                </FormTable>
 
-                    <TwoFactorSetupModal
-                        isOpen={showSetupModal}
-                        onClose={() => setShowSetupModal(false)}
-                        requiresConfirmation={requiresConfirmation}
-                        twoFactorEnabled={twoFactorEnabled}
-                        qrCodeSvg={qrCodeSvg}
-                        manualSetupKey={manualSetupKey}
-                        clearSetupData={clearSetupData}
-                        fetchSetupData={fetchSetupData}
-                        errors={errors}
-                    />
-                </div>
+                <TwoFactorSetupModal
+                    isOpen={showSetupModal}
+                    onClose={() => setShowSetupModal(false)}
+                    requiresConfirmation={requiresConfirmation}
+                    twoFactorEnabled={twoFactorEnabled}
+                    qrCodeSvg={qrCodeSvg}
+                    manualSetupKey={manualSetupKey}
+                    clearSetupData={clearSetupData}
+                    fetchSetupData={fetchSetupData}
+                    errors={errors}
+                />
             </SettingsLayout>
         </AppLayout>
     );

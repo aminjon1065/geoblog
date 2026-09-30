@@ -134,3 +134,135 @@ test('updating a block scoped to one page rejects a block id from another page',
         'translations' => ['ru' => ['title' => 'x']],
     ])->assertForbidden();
 });
+
+test('rich text that is not a string is refused, not stored raw', function () {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'rich_text', 'sort_order' => 1]);
+    $block->translations()->create(['locale' => 'ru', 'content' => ['body' => '<p>safe</p>']]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'rich_text',
+        'translations' => [
+            'ru' => ['body' => ['<img src=x onerror=alert(1)>']],
+        ],
+    ])->assertSessionHasErrors('translations.ru.body');
+
+    $this->post(route('admin.content-pages.blocks.store', $this->page), [
+        'type' => 'rich_text',
+        'translations' => [
+            'ru' => ['body' => ['<img src=x onerror=alert(1)>']],
+        ],
+    ])->assertSessionHasErrors('translations.ru.body');
+
+    expect($block->translations()->where('locale', 'ru')->value('content'))->toBe(['body' => '<p>safe</p>']);
+    expect(ContentBlock::count())->toBe(1);
+});
+
+test('hero button links must be http(s) addresses or site paths', function (string $url) {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'hero', 'sort_order' => 1]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'hero',
+        'translations' => ['ru' => ['cta_label' => 'Жми', 'cta_url' => $url]],
+    ])->assertSessionHasErrors('translations.ru.cta_url');
+
+    expect($block->translations()->count())->toBe(0);
+})->with([
+    'javascript' => 'javascript:alert(1)',
+    'mixed-case javascript' => 'JaVaScRiPt:alert(document.cookie)',
+    'data url' => 'data:text/html,<script>alert(1)</script>',
+    'protocol-relative' => '//evil.example/phish',
+    'backslash trick' => '/\\evil.example',
+    'whitespace' => ' javascript:alert(1)',
+]);
+
+test('hero button links accept http(s) addresses and site paths', function (string $url) {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'hero', 'sort_order' => 1]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'hero',
+        'translations' => ['ru' => ['cta_label' => 'Подробнее', 'cta_url' => $url]],
+    ])->assertSessionHasNoErrors();
+
+    expect($block->translations()->where('locale', 'ru')->value('content')['cta_url'])->toBe($url);
+})->with([
+    'https' => 'https://example.com/about?x=1#team',
+    'http' => 'http://example.com',
+    'site path' => '/ru/services',
+]);
+
+test('block fields are checked against the type schema', function () {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'hero', 'sort_order' => 1, 'settings' => ['alignment' => 'center']]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'hero',
+        'settings' => ['alignment' => 'diagonal', 'onclick' => 'x'],
+        'translations' => ['ru' => ['title' => ['nested'], 'script' => '<script>']],
+    ])->assertSessionHasErrors([
+        'settings.alignment',
+        'settings',
+        'translations.ru.title',
+        'translations.ru',
+    ]);
+
+    expect($block->fresh()->settings)->toBe(['alignment' => 'center']);
+});
+
+test('block translations for unknown languages are refused', function () {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'hero', 'sort_order' => 1]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'hero',
+        'translations' => ['zz' => ['title' => 'x']],
+    ])->assertSessionHasErrors('translations');
+
+    expect($block->translations()->count())->toBe(0);
+});
+
+test('the type of an existing block cannot be changed', function () {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'hero', 'sort_order' => 1]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'rich_text',
+        'translations' => ['ru' => ['body' => '<p>x</p>']],
+    ])->assertSessionHasErrors('type');
+
+    expect($block->fresh()->type)->toBe('hero');
+});
+
+test('updating a block without translations keeps its texts and settings', function () {
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create([
+        'type' => 'hero',
+        'sort_order' => 1,
+        'settings' => ['alignment' => 'left', 'image_id' => 7],
+    ]);
+    $block->translations()->create(['locale' => 'ru', 'content' => ['title' => 'Заголовок']]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'hero',
+    ])->assertSessionHasNoErrors();
+
+    expect($block->translations()->where('locale', 'ru')->value('content'))->toBe(['title' => 'Заголовок']);
+    expect($block->fresh()->settings)->toBe(['alignment' => 'left', 'image_id' => 7]);
+});
+
+test('updating one language of a block keeps the other languages', function () {
+    Locale::firstOrCreate(['code' => 'en'], ['name' => 'English', 'is_active' => false, 'sort_order' => 3]);
+    $this->actingAs(userWithRole('admin'));
+    $block = $this->page->blocks()->create(['type' => 'hero', 'sort_order' => 1]);
+    $block->translations()->create(['locale' => 'en', 'content' => ['title' => 'English']]);
+
+    $this->put(route('admin.content-pages.blocks.update', [$this->page, $block]), [
+        'type' => 'hero',
+        'translations' => ['ru' => ['title' => 'Русский']],
+    ])->assertSessionHasNoErrors()->assertSessionHas('success', 'Блок сохранён.');
+
+    expect($block->translations()->where('locale', 'en')->value('content'))->toBe(['title' => 'English']);
+    expect($block->translations()->where('locale', 'ru')->value('content')['title'])->toBe('Русский');
+});

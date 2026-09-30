@@ -171,3 +171,98 @@ test('admin can delete an item; children orphan to root via nullOnDelete', funct
     $this->assertDatabaseMissing('menu_items', ['id' => $parent->id]);
     expect($child->fresh()->parent_id)->toBeNull();
 });
+
+test('saving an item keeps labels of languages the form does not send', function () {
+    Locale::firstOrCreate(['code' => 'en'], ['name' => 'English', 'is_active' => false, 'sort_order' => 3]);
+    $this->actingAs(userWithRole('admin'));
+    $item = $this->menu->items()->create([
+        'parent_id' => null, 'sort_order' => 1, 'link_type' => 'internal', 'link_target' => '/',
+    ]);
+    $item->translations()->create(['locale' => 'ru', 'label' => 'Главная']);
+    $item->translations()->create(['locale' => 'en', 'label' => 'Home']);
+
+    $this->put(route('admin.menus.items.update', [$this->menu, $item]), [
+        'link_type' => 'internal',
+        'link_target' => '/',
+        'translations' => ['ru' => ['label' => 'На главную']],
+    ])->assertRedirect()->assertSessionHas('success', 'Пункт меню сохранён.');
+
+    expect($item->translations()->orderBy('locale')->pluck('label', 'locale')->all())
+        ->toBe(['en' => 'Home', 'ru' => 'На главную']);
+});
+
+test('a label sent empty removes that language', function () {
+    Locale::firstOrCreate(['code' => 'en'], ['name' => 'English', 'is_active' => true, 'sort_order' => 3]);
+    $this->actingAs(userWithRole('admin'));
+    $item = $this->menu->items()->create([
+        'parent_id' => null, 'sort_order' => 1, 'link_type' => 'internal', 'link_target' => '/',
+    ]);
+    $item->translations()->create(['locale' => 'ru', 'label' => 'Главная']);
+    $item->translations()->create(['locale' => 'en', 'label' => 'Home']);
+
+    $this->put(route('admin.menus.items.update', [$this->menu, $item]), [
+        'link_type' => 'internal',
+        'link_target' => '/',
+        'translations' => ['ru' => ['label' => 'Главная'], 'en' => ['label' => '']],
+    ])->assertSessionHasNoErrors();
+
+    expect($item->translations()->pluck('locale')->all())->toBe(['ru']);
+});
+
+test('menu links cannot carry scripts or leave the site through a path', function (string $type, string $target) {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->post(route('admin.menus.items.store', $this->menu), [
+        'link_type' => $type,
+        'link_target' => $target,
+        'translations' => ['ru' => ['label' => 'x']],
+    ])->assertSessionHasErrors('link_target');
+
+    expect($this->menu->items()->count())->toBe(0);
+})->with([
+    'javascript as external' => ['external', 'javascript:alert(1)'],
+    'http without host' => ['external', 'http:evil'],
+    'protocol-relative path' => ['internal', '//evil.example'],
+    'page that does not exist' => ['page', '99999'],
+    'page given by slug' => ['page', 'about-us'],
+]);
+
+test('external and page links need a target', function (string $type) {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->post(route('admin.menus.items.store', $this->menu), [
+        'link_type' => $type,
+        'link_target' => '',
+        'translations' => ['ru' => ['label' => 'x']],
+    ])->assertSessionHasErrors('link_target');
+})->with(['external', 'page']);
+
+test('menu item labels for unknown languages are refused', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->post(route('admin.menus.items.store', $this->menu), [
+        'link_type' => 'internal',
+        'link_target' => '/',
+        'translations' => ['ru' => ['label' => 'Главная'], 'xx' => ['label' => '?']],
+    ])->assertSessionHasErrors('translations');
+});
+
+test('moving an item under its own child is refused with a Russian message', function () {
+    $this->actingAs(userWithRole('admin'));
+    $parent = $this->menu->items()->create([
+        'parent_id' => null, 'sort_order' => 1, 'link_type' => 'internal', 'link_target' => '/',
+    ]);
+    $parent->translations()->create(['locale' => 'ru', 'label' => 'Родитель']);
+    $child = $this->menu->items()->create([
+        'parent_id' => $parent->id, 'sort_order' => 1, 'link_type' => 'internal', 'link_target' => '/x',
+    ]);
+
+    $this->put(route('admin.menus.items.update', [$this->menu, $parent]), [
+        'parent_id' => $child->id,
+        'link_type' => 'internal',
+        'link_target' => '/',
+        'translations' => ['ru' => ['label' => 'Родитель']],
+    ])->assertSessionHasErrors(['parent_id' => 'Нельзя вложить пункт меню в его собственный подпункт.']);
+
+    expect($parent->fresh()->parent_id)->toBeNull();
+});

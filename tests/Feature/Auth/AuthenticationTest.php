@@ -82,3 +82,22 @@ test('users are rate limited', function () {
 
     $response->assertTooManyRequests();
 });
+
+test('a failed login is explained in russian', function () {
+    $user = User::factory()->create();
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'wrong-password',
+    ])->assertSessionHasErrors(['email' => 'Неверное имя пользователя или пароль.']);
+});
+
+test('login validation messages are in russian', function () {
+    $this->post(route('login.store'), [
+        'email' => '',
+        'password' => '',
+    ])->assertSessionHasErrors([
+        'email' => 'Поле e-mail обязательно для заполнения.',
+        'password' => 'Поле пароль обязательно для заполнения.',
+    ]);
+});

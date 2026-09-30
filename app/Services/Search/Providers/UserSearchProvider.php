@@ -16,7 +16,7 @@ final class UserSearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Users';
+        return 'Пользователи';
     }
 
     public function permission(): ?string

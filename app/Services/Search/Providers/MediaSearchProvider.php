@@ -17,7 +17,7 @@ final class MediaSearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Media';
+        return 'Медиафайлы';
     }
 
     public function permission(): ?string
@@ -37,16 +37,13 @@ final class MediaSearchProvider implements SearchProvider
             })
             ->latest()
             ->limit($limit)
-            ->get(['id', 'name', 'original_name', 'mime_type', 'folder_id'])
+            ->get(['id', 'name', 'original_name', 'mime_type'])
             ->map(fn (Media $m): array => [
                 'id' => $m->id,
-                'title' => $m->name ?? $m->original_name ?? "media #{$m->id}",
+                'title' => $m->name ?? $m->original_name ?? "Медиафайл #{$m->id}",
                 'subtitle' => $m->mime_type,
-                // Media doesn't have a dedicated edit page; deep-link to the folder
-                // (or root) so the admin lands close to the file.
-                'url' => $m->folder_id !== null
-                    ? "/admin/media?folder={$m->folder_id}"
-                    : '/admin/media',
+                // The library opens «Параметры вложения» for `?item=`.
+                'url' => "/admin/media?item={$m->id}",
             ])
             ->all();
     }

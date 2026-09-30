@@ -10,6 +10,14 @@ use App\Services\Search\SearchProvider;
 
 final class PostSearchProvider implements SearchProvider
 {
+    /** @var array<string, string> */
+    private const STATUS_LABELS = [
+        Post::STATUS_DRAFT => 'Черновик',
+        Post::STATUS_PENDING => 'На утверждении',
+        Post::STATUS_PUBLISHED => 'Опубликовано',
+        Post::STATUS_ARCHIVED => 'В архиве',
+    ];
+
     public function type(): string
     {
         return 'post';
@@ -17,7 +25,7 @@ final class PostSearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Posts';
+        return 'Записи';
     }
 
     public function permission(): ?string
@@ -42,7 +50,7 @@ final class PostSearchProvider implements SearchProvider
             ->map(fn (Post $p): array => [
                 'id' => $p->id,
                 'title' => $p->translation?->title ?? $p->slug,
-                'subtitle' => $p->status,
+                'subtitle' => self::STATUS_LABELS[$p->status] ?? $p->status,
                 'url' => "/admin/posts/{$p->id}/edit",
             ])
             ->all();

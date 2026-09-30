@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ContactRequest;
+use App\Models\Locale;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Menu\MenuCache;
 use App\Services\Notifications\NotificationService;
@@ -52,7 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => fn () => $this->serializeUser($request->user()),
             ],
             'locale' => fn () => app()->getLocale(),
-            'locales' => \App\Models\Locale::where('is_active', true)->orderBy('sort_order')->get(),
+            'locales' => fn () => Locale::where('is_active', true)->orderBy('sort_order')->get(),
             'translations' => fn () => [
                 'ui' => trans('ui'),
             ],
@@ -72,6 +75,29 @@ class HandleInertiaRequests extends Middleware
             'notifications' => fn () => $request->user() !== null
                 ? ['unread' => app(NotificationService::class)->unreadCount($request->user())]
                 : ['unread' => 0],
+            // Counter bubbles of the admin menu and toolbar; admin screens only.
+            'adminMenu' => fn () => $this->adminMenuCounts($request),
+        ];
+    }
+
+    /**
+     * @return array{contact_requests: int, pending_posts: int}|null
+     */
+    private function adminMenuCounts(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if ($user === null || ! $request->is('admin', 'admin/*', 'dashboard', 'settings', 'settings/*')) {
+            return null;
+        }
+
+        return [
+            'contact_requests' => $user->can('contact-requests.viewAny')
+                ? ContactRequest::query()->where('is_read', false)->count()
+                : 0,
+            'pending_posts' => $user->can('posts.publish')
+                ? Post::query()->where('status', Post::STATUS_PENDING)->count()
+                : 0,
         ];
     }
 

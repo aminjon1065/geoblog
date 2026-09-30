@@ -63,7 +63,7 @@ test('authenticated user can store a post', function () {
         ],
         'categories' => [$category->id],
         'tags' => [$tag->id],
-    ])->assertRedirect(route('admin.posts.index'));
+    ])->assertRedirect(route('admin.posts.edit', Post::where('slug', 'testovaia-statia')->first()));
 
     $this->assertDatabaseHas('posts', ['slug' => 'testovaia-statia', 'status' => 'draft']);
     $this->assertDatabaseHas('post_translations', ['title' => 'Тестовая статья', 'locale' => 'ru']);
@@ -96,7 +96,7 @@ test('store post allows partial translations (not all locales required)', functi
             'ru' => ['title' => 'Только русский', 'excerpt' => '', 'content' => 'Контент'],
             'en' => ['title' => '', 'excerpt' => '', 'content' => ''],
         ],
-    ])->assertRedirect(route('admin.posts.index'));
+    ])->assertRedirect(route('admin.posts.edit', Post::where('slug', 'tolko-russkii')->first()));
 
     $this->assertDatabaseHas('posts', ['slug' => 'tolko-russkii']);
     $this->assertDatabaseHas('post_translations', ['locale' => 'ru', 'title' => 'Только русский']);
@@ -121,7 +121,7 @@ test('authenticated user can view edit post form', function () {
         );
 });
 
-test('authenticated user can update a post', function () {
+test('authenticated user can update a post and its address stays stable', function () {
     $post = Post::create([
         'slug' => 'old-slug',
         'status' => 'draft',
@@ -140,10 +140,11 @@ test('authenticated user can update a post', function () {
         ],
         'categories' => [],
         'tags' => [],
-    ])->assertRedirect(route('admin.posts.index'));
+    ])->assertRedirect(route('admin.posts.edit', $post));
 
     $post->refresh();
-    expect($post->slug)->toBe('obnovlennaia-statia');
+    // A retitled post keeps its URL: links to it must not break.
+    expect($post->slug)->toBe('old-slug');
     expect($post->status)->toBe('published');
 });
 
@@ -171,7 +172,7 @@ test('update post removes translations for cleared locales', function () {
         ],
         'categories' => [],
         'tags' => [],
-    ])->assertRedirect(route('admin.posts.index'));
+    ])->assertRedirect(route('admin.posts.edit', $post));
 
     $this->assertDatabaseHas('post_translations', ['post_id' => $post->id, 'locale' => 'ru', 'title' => 'Только русский']);
     $this->assertDatabaseMissing('post_translations', ['post_id' => $post->id, 'locale' => 'en']);

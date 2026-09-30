@@ -12,12 +12,15 @@ interface Props {
  * so dangerouslySetInnerHTML here is safe.
  */
 export default function RichTextBlock({ content }: Props) {
-    if (!content.body) return null;
+    // Only a string is markup; anything else never reaches the page.
+    if (typeof content.body !== 'string' || content.body === '') {
+        return null;
+    }
 
     return (
         <section className="mx-auto max-w-3xl px-6 py-10">
             <div
-                className="prose prose-neutral dark:prose-invert max-w-none"
+                className="prose-public mx-auto max-w-3xl"
                 dangerouslySetInnerHTML={{ __html: content.body }}
             />
         </section>

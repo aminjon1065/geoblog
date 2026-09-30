@@ -1,108 +1,138 @@
 import { Head, Link, router } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import { Button } from '@/components/ui/button';
+import { CalendarDays, Globe, Mail } from 'lucide-react';
+import { useConfirmDialog } from '@/components/admin/content/confirm-dialog';
+import { formatDateTime } from '@/components/admin/content/format';
+import { PublishRow } from '@/components/admin/content/publish-box';
+import { PageHeader } from '@/components/wp/page-header';
+import { Postbox } from '@/components/wp/postbox';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { bulk, destroy, index } from '@/routes/admin/contact-requests';
 
-interface ContactRequest {
+type ContactRequest = {
     id: number;
     name: string;
     email: string;
     message: string;
     locale: string;
+    locale_name: string | null;
     is_read: boolean;
-    created_at: string;
-}
+    created_at: string | null;
+};
 
-interface Props {
+export default function ContactRequestShow({
+    contactRequest,
+}: {
     contactRequest: ContactRequest;
-}
-
-export default function ContactRequestShow({ contactRequest }: Props) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Contact Requests', href: '/admin/contact-requests' },
-        {
-            title: contactRequest.name,
-            href: `/admin/contact-requests/${contactRequest.id}`,
-        },
-    ];
-
+}) {
     const { can } = usePermissions();
-    const canDelete = can('contact-requests.delete');
+    const { confirm, dialog } = useConfirmDialog();
 
-    function handleDelete() {
-        router.delete(`/admin/contact-requests/${contactRequest.id}`);
-    }
+    const askDelete = () =>
+        confirm({
+            title: 'Удалить заявку?',
+            description: `Заявка от ${contactRequest.name} (${contactRequest.email}) пропадёт из списка.`,
+            onConfirm: () => router.delete(destroy.url(contactRequest.id)),
+        });
+
+    const markUnread = () =>
+        router.post(bulk.url(), {
+            action: 'mark_unread',
+            ids: [contactRequest.id],
+            redirect: 'index',
+        });
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Contact: ${contactRequest.name}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <Heading
-                        title={contactRequest.name}
-                        description={`Received on ${new Date(contactRequest.created_at).toLocaleDateString()}`}
-                    />
-                    <div className="flex gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/contact-requests">Back</Link>
-                        </Button>
-                        {canDelete && (
-                            <ConfirmButton
-                                size="default"
-                                title="Delete request?"
-                                description={`Submission from ${contactRequest.name} will be permanently removed.`}
-                                onConfirm={handleDelete}
-                            >
-                                Delete
-                            </ConfirmButton>
-                        )}
-                    </div>
+        <AppLayout>
+            <Head title={`Заявка от ${contactRequest.name}`} />
+
+            <PageHeader title={`Заявка от ${contactRequest.name}`}>
+                <Link href={index.url()} className="wp-page-title-action">
+                    ← Все заявки
+                </Link>
+            </PageHeader>
+
+            <div className="mt-2 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                <div className="min-w-0 space-y-5">
+                    <Postbox title="Сообщение" collapsible={false}>
+                        <div className="text-[14px] leading-relaxed whitespace-pre-wrap text-[#1d2327]">
+                            {contactRequest.message}
+                        </div>
+                    </Postbox>
+
+                    <Postbox title="Отправитель">
+                        <table className="form-table mt-0!" role="presentation">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Имя</th>
+                                    <td>{contactRequest.name}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">E-mail</th>
+                                    <td>
+                                        <a
+                                            href={`mailto:${contactRequest.email}`}
+                                            className="text-[#2271b1] hover:text-[#135e96]"
+                                        >
+                                            {contactRequest.email}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Язык сайта</th>
+                                    <td>
+                                        {contactRequest.locale_name ??
+                                            contactRequest.locale.toUpperCase()}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </Postbox>
                 </div>
 
-                <div className="max-w-2xl rounded-lg border p-6">
-                    <dl className="space-y-4">
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">
-                                Name
-                            </dt>
-                            <dd className="mt-1">{contactRequest.name}</dd>
+                <div className="space-y-5">
+                    <Postbox title="Заявка" collapsible={false}>
+                        <div className="space-y-3 text-[13px] text-[#3c434a]">
+                            <PublishRow icon={CalendarDays} label="Получена">
+                                {formatDateTime(contactRequest.created_at)}
+                            </PublishRow>
+                            <PublishRow icon={Globe} label="Язык">
+                                {contactRequest.locale_name ??
+                                    contactRequest.locale.toUpperCase()}
+                            </PublishRow>
+                            <a
+                                href={`mailto:${contactRequest.email}`}
+                                className="wp-button is-primary w-full"
+                            >
+                                <Mail className="size-4" aria-hidden />
+                                Ответить по email
+                            </a>
                         </div>
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">
-                                Email
-                            </dt>
-                            <dd className="mt-1">
-                                <a
-                                    href={`mailto:${contactRequest.email}`}
-                                    className="text-primary hover:underline"
+                        <div className="-mx-3 mt-3 -mb-3 flex items-center justify-between gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-3 py-2.5">
+                            {can('contact-requests.delete') ? (
+                                <button
+                                    type="button"
+                                    className="wp-link-button is-danger text-[13px]"
+                                    onClick={askDelete}
                                 >
-                                    {contactRequest.email}
-                                </a>
-                            </dd>
+                                    Удалить
+                                </button>
+                            ) : (
+                                <span />
+                            )}
+                            <button
+                                type="button"
+                                className="wp-button"
+                                onClick={markUnread}
+                            >
+                                Отметить непрочитанной
+                            </button>
                         </div>
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">
-                                Language
-                            </dt>
-                            <dd className="mt-1 uppercase">
-                                {contactRequest.locale}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-sm font-medium text-muted-foreground">
-                                Message
-                            </dt>
-                            <dd className="mt-1 rounded-md bg-muted p-4 text-sm whitespace-pre-wrap">
-                                {contactRequest.message}
-                            </dd>
-                        </div>
-                    </dl>
+                    </Postbox>
                 </div>
             </div>
+
+            {dialog}
         </AppLayout>
     );
 }

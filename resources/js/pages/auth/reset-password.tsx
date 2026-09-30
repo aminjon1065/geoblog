@@ -1,10 +1,15 @@
-import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { Form, Head, Link } from '@inertiajs/react';
+import {
+    LoginBox,
+    LoginErrors,
+    LoginField,
+    LoginNav,
+    LoginPasswordInput,
+    loginButtonClass,
+    loginInputClass,
+} from '@/layouts/auth/auth-simple-layout';
 import AuthLayout from '@/layouts/auth-layout';
+import { login } from '@/routes';
 import { update } from '@/routes/password';
 
 type Props = {
@@ -15,10 +20,10 @@ type Props = {
 export default function ResetPassword({ token, email }: Props) {
     return (
         <AuthLayout
-            title="Reset password"
-            description="Please enter your new password below"
+            title="Новый пароль"
+            description="Придумайте новый пароль для входа."
         >
-            <Head title="Reset password" />
+            <Head title="Новый пароль" />
 
             <Form
                 {...update.form()}
@@ -26,68 +31,74 @@ export default function ResetPassword({ token, email }: Props) {
                 resetOnSuccess={['password', 'password_confirmation']}
             >
                 {({ processing, errors }) => (
-                    <div className="grid gap-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                autoComplete="email"
-                                value={email}
-                                className="mt-1 block w-full"
-                                readOnly
-                            />
-                            <InputError
-                                message={errors.email}
-                                className="mt-2"
-                            />
-                        </div>
+                    <>
+                        <LoginErrors errors={errors} />
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                autoComplete="new-password"
-                                className="mt-1 block w-full"
-                                autoFocus
-                                placeholder="Password"
-                            />
-                            <InputError message={errors.password} />
-                        </div>
+                        <LoginBox>
+                            <LoginField id="email" label="E-mail">
+                                <input
+                                    id="email"
+                                    type="email"
+                                    name="email"
+                                    className={loginInputClass}
+                                    autoComplete="email"
+                                    value={email}
+                                    readOnly
+                                />
+                            </LoginField>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">
-                                Confirm password
-                            </Label>
-                            <Input
+                            <LoginField id="password" label="Новый пароль">
+                                <LoginPasswordInput
+                                    id="password"
+                                    name="password"
+                                    autoComplete="new-password"
+                                    autoFocus
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.password) || undefined
+                                    }
+                                />
+                            </LoginField>
+
+                            <LoginField
                                 id="password_confirmation"
-                                type="password"
-                                name="password_confirmation"
-                                autoComplete="new-password"
-                                className="mt-1 block w-full"
-                                placeholder="Confirm password"
-                            />
-                            <InputError
-                                message={errors.password_confirmation}
-                                className="mt-2"
-                            />
-                        </div>
+                                label="Подтверждение пароля"
+                            >
+                                <LoginPasswordInput
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    autoComplete="new-password"
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.password_confirmation) ||
+                                        undefined
+                                    }
+                                />
+                            </LoginField>
 
-                        <Button
-                            type="submit"
-                            className="mt-4 w-full"
-                            disabled={processing}
-                            data-test="reset-password-button"
-                        >
-                            {processing && <Spinner />}
-                            Reset password
-                        </Button>
-                    </div>
+                            <p className="mb-4 text-[13px] text-[#646970]">
+                                Совет: используйте длинный пароль из случайных
+                                слов, цифр и знаков.
+                            </p>
+
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    className={loginButtonClass}
+                                    disabled={processing}
+                                    data-test="reset-password-button"
+                                >
+                                    Сохранить пароль
+                                </button>
+                            </div>
+                        </LoginBox>
+                    </>
                 )}
             </Form>
+
+            <LoginNav>
+                <Link href={login()}>Войти</Link>
+            </LoginNav>
         </AuthLayout>
     );
 }

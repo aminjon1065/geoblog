@@ -80,3 +80,48 @@ test('admin can delete a menu; items cascade', function () {
     $this->assertDatabaseMissing('menus', ['id' => $menu->id]);
     $this->assertDatabaseMissing('menu_items', ['id' => $item->id]);
 });
+
+test('menus index shows item counts', function () {
+    $this->actingAs(userWithRole('admin'));
+    $menu = Menu::create(['slug' => 'header', 'name' => 'Шапка']);
+    $menu->items()->create(['parent_id' => null, 'sort_order' => 1, 'link_type' => 'internal', 'link_target' => '/']);
+    $menu->items()->create(['parent_id' => null, 'sort_order' => 2, 'link_type' => 'internal', 'link_target' => '/about']);
+
+    $this->get(route('admin.menus.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Admin/Menus/Index')
+            ->where('menus.0.name', 'Шапка')
+            ->where('menus.0.items_count', 2));
+});
+
+test('menu edit screen offers content pages with their titles', function () {
+    $this->actingAs(userWithRole('admin'));
+    $menu = Menu::create(['slug' => 'header', 'name' => 'Шапка']);
+    $page = App\Models\ContentPage::create(['slug' => 'about-us', 'status' => 'published']);
+    $page->translations()->create(['locale' => 'ru', 'title' => 'О нас']);
+
+    $this->get(route('admin.menus.edit', $menu))
+        ->assertOk()
+        ->assertInertia(fn ($inertia) => $inertia
+            ->component('Admin/Menus/Edit')
+            ->where('contentPages.0.id', $page->id)
+            ->where('contentPages.0.title', 'О нас')
+            ->where('contentPages.0.titles', ['ru' => 'О нас']));
+});
+
+test('menu flash and validation messages are in Russian', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $this->post(route('admin.menus.store'), [
+        'slug' => 'footer',
+        'name' => 'Подвал',
+    ])->assertSessionHas('success', 'Меню создано. Теперь добавьте в него пункты.');
+
+    $this->post(route('admin.menus.store'), [
+        'slug' => 'Bad Slug',
+        'name' => 'Плохое',
+    ])->assertSessionHasErrors([
+        'slug' => 'Ярлык может содержать только строчные латинские буквы, цифры и дефисы.',
+    ]);
+});

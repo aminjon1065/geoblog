@@ -1,266 +1,223 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
+import { Eye, KeyRound } from 'lucide-react';
 import { useState } from 'react';
-import Heading from '@/components/heading';
+import type { FormEvent } from 'react';
+import { SeoPostbox, TitleInput } from '@/components/admin/content/fields';
+import {
+    LocaleTabs,
+    localesWithErrors,
+} from '@/components/admin/content/locale-tabs';
+import { PublishBox, PublishRow } from '@/components/admin/content/publish-box';
+import type { AdminLocale } from '@/components/admin/content/types';
+import { useInitialLocale } from '@/components/admin/content/use-view-locale';
 import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import RichTextEditor from '@/components/ui/rich-text-editor';
+import { Notice } from '@/components/wp/notice';
+import { PageHeader } from '@/components/wp/page-header';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { update } from '@/routes/admin/pages';
 
-interface Locale {
-    code: string;
-    name: string;
-}
+type TranslationField = 'title' | 'content' | 'meta_title' | 'meta_description';
 
-interface TranslationData {
-    title: string;
-    content: string;
-    meta_title: string;
-    meta_description: string;
-}
+type PageTranslation = Record<TranslationField, string>;
 
-interface PageData {
+type PageData = {
     id: number;
     key: string;
     is_active: boolean;
-    translations: Record<string, TranslationData>;
-}
+    translations: Record<
+        string,
+        Partial<Record<TranslationField, string | null>>
+    >;
+};
 
-interface FormData {
+type FormData = {
     is_active: boolean;
-    translations: Record<string, TranslationData>;
-}
+    translations: Record<string, PageTranslation>;
+};
 
-interface Props {
+const FIELDS: TranslationField[] = [
+    'title',
+    'content',
+    'meta_title',
+    'meta_description',
+];
+
+export default function PagesEdit({
+    page,
+    locales,
+}: {
     page: PageData;
-    locales: Locale[];
-}
+    locales: AdminLocale[];
+}) {
+    const initialLocale = useInitialLocale(locales);
+    const [activeLocale, setActiveLocale] = useState(initialLocale);
 
-export default function PagesEdit({ page, locales }: Props) {
-    const [activeLocale, setActiveLocale] = useState(locales[0]?.code ?? 'tj');
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Pages', href: '/admin/pages' },
-        { title: 'Edit', href: `/admin/pages/${page.id}/edit` },
-    ];
-
-    const initialTranslations: Record<string, TranslationData> = {};
-    for (const locale of locales) {
-        initialTranslations[locale.code] = page.translations[locale.code] ?? {
-            title: '',
-            content: '',
-            meta_title: '',
-            meta_description: '',
-        };
-    }
-
-    const { data, setData, put, processing, errors } = useForm<FormData>({
+    const form = useForm<FormData>({
         is_active: page.is_active,
-        translations: initialTranslations,
+        translations: Object.fromEntries(
+            locales.map((locale) => [
+                locale.code,
+                Object.fromEntries(
+                    FIELDS.map((field) => [
+                        field,
+                        page.translations[locale.code]?.[field] ?? '',
+                    ]),
+                ) as PageTranslation,
+            ]),
+        ),
     });
 
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        put(`/admin/pages/${page.id}`);
-    }
+    const errors = form.errors as Record<string, string | undefined>;
+    const errorFor = (locale: string, field: TranslationField) =>
+        errors[`translations.${locale}.${field}`];
 
-    function updateTranslation(
+    const setField = (
         locale: string,
-        field: keyof TranslationData,
+        field: TranslationField,
         value: string,
-    ) {
-        setData('translations', {
-            ...data.translations,
-            [locale]: {
-                ...data.translations[locale],
-                [field]: value,
-            },
+    ) => {
+        form.setData('translations', {
+            ...form.data.translations,
+            [locale]: { ...form.data.translations[locale], [field]: value },
         });
-    }
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        form.submit(update(page.id));
+    };
+
+    const filled = Object.fromEntries(
+        locales.map((locale) => [
+            locale.code,
+            (form.data.translations[locale.code]?.title ?? '').trim() !== '',
+        ]),
+    );
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Edit Page" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading
-                    title="Edit Page"
-                    description={`Editing page: ${page.key}`}
-                />
+        <AppLayout>
+            <Head title="Редактировать страницу" />
 
-                <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            id="is_active"
-                            checked={data.is_active}
-                            onCheckedChange={(checked) =>
-                                setData('is_active', checked === true)
-                            }
+            <PageHeader title="Редактировать системную страницу" />
+
+            <form onSubmit={submit}>
+                {errors.translations && (
+                    <Notice type="error">
+                        <p>{errors.translations}</p>
+                    </Notice>
+                )}
+
+                <div className="mt-2 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                    <div className="min-w-0 space-y-4">
+                        <LocaleTabs
+                            locales={locales}
+                            active={activeLocale}
+                            onChange={setActiveLocale}
+                            filled={filled}
+                            invalid={localesWithErrors(errors)}
                         />
-                        <Label htmlFor="is_active">Active</Label>
-                        <InputError message={errors.is_active} />
-                    </div>
 
-                    {/* Locale Tabs */}
-                    <div className="space-y-4">
-                        <Label>Translations</Label>
-                        <div className="flex gap-2 border-b">
-                            {locales.map((locale) => (
-                                <button
+                        {locales.map((locale) => {
+                            const translation =
+                                form.data.translations[locale.code];
+
+                            return (
+                                <div
                                     key={locale.code}
-                                    type="button"
-                                    onClick={() => setActiveLocale(locale.code)}
-                                    className={`px-4 py-2 text-sm font-medium transition-colors ${
-                                        activeLocale === locale.code
-                                            ? 'border-b-2 border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                    hidden={locale.code !== activeLocale}
+                                    className="space-y-4"
                                 >
-                                    {locale.name}
-                                </button>
-                            ))}
-                        </div>
-
-                        {locales.map((locale) => (
-                            <div
-                                key={locale.code}
-                                className={
-                                    activeLocale === locale.code
-                                        ? 'space-y-4'
-                                        : 'hidden'
-                                }
-                            >
-                                <div className="space-y-2">
-                                    <Label htmlFor={`title-${locale.code}`}>
-                                        Title
-                                    </Label>
-                                    <Input
-                                        id={`title-${locale.code}`}
-                                        value={
-                                            data.translations[locale.code]
-                                                ?.title ?? ''
-                                        }
-                                        onChange={(e) =>
-                                            updateTranslation(
+                                    <TitleInput
+                                        id={`system-page-title-${locale.code}`}
+                                        value={translation.title}
+                                        onChange={(value) =>
+                                            setField(
                                                 locale.code,
                                                 'title',
-                                                e.target.value,
+                                                value,
                                             )
                                         }
+                                        placeholder={`Заголовок (${locale.name})`}
+                                        error={errorFor(locale.code, 'title')}
                                     />
-                                    <InputError
-                                        message={
-                                            errors[
-                                                `translations.${locale.code}.title` as keyof typeof errors
-                                            ]
-                                        }
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor={`content-${locale.code}`}>
-                                        Content
-                                    </Label>
-                                    <textarea
-                                        id={`content-${locale.code}`}
-                                        rows={12}
-                                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                                        value={
-                                            data.translations[locale.code]
-                                                ?.content ?? ''
-                                        }
-                                        onChange={(e) =>
-                                            updateTranslation(
+                                    <div>
+                                        <RichTextEditor
+                                            content={translation.content}
+                                            onChange={(html) =>
+                                                setField(
+                                                    locale.code,
+                                                    'content',
+                                                    html,
+                                                )
+                                            }
+                                            placeholder="Текст страницы…"
+                                        />
+                                        <InputError
+                                            className="mt-1"
+                                            message={errorFor(
                                                 locale.code,
                                                 'content',
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={
-                                            errors[
-                                                `translations.${locale.code}.content` as keyof typeof errors
-                                            ]
-                                        }
-                                    />
-                                </div>
-
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor={`meta_title-${locale.code}`}
-                                        >
-                                            Meta Title
-                                        </Label>
-                                        <Input
-                                            id={`meta_title-${locale.code}`}
-                                            value={
-                                                data.translations[locale.code]
-                                                    ?.meta_title ?? ''
-                                            }
-                                            onChange={(e) =>
-                                                updateTranslation(
-                                                    locale.code,
-                                                    'meta_title',
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                        <InputError
-                                            message={
-                                                errors[
-                                                    `translations.${locale.code}.meta_title` as keyof typeof errors
-                                                ]
-                                            }
+                                            )}
                                         />
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor={`meta_description-${locale.code}`}
-                                        >
-                                            Meta Description
-                                        </Label>
-                                        <Input
-                                            id={`meta_description-${locale.code}`}
-                                            value={
-                                                data.translations[locale.code]
-                                                    ?.meta_description ?? ''
-                                            }
-                                            onChange={(e) =>
-                                                updateTranslation(
-                                                    locale.code,
-                                                    'meta_description',
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                        <InputError
-                                            message={
-                                                errors[
-                                                    `translations.${locale.code}.meta_description` as keyof typeof errors
-                                                ]
-                                            }
-                                        />
-                                    </div>
+                                    <SeoPostbox
+                                        idPrefix={`system-page-${locale.code}`}
+                                        metaTitle={translation.meta_title}
+                                        metaDescription={
+                                            translation.meta_description
+                                        }
+                                        titlePlaceholder={translation.title}
+                                        onChange={(field, value) =>
+                                            setField(locale.code, field, value)
+                                        }
+                                        errors={{
+                                            meta_title: errorFor(
+                                                locale.code,
+                                                'meta_title',
+                                            ),
+                                            meta_description: errorFor(
+                                                locale.code,
+                                                'meta_description',
+                                            ),
+                                        }}
+                                    />
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <Button type="submit" disabled={processing}>
-                            Update Page
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/pages">Cancel</Link>
-                        </Button>
+                    <div className="space-y-5">
+                        <PublishBox
+                            title="Сохранить"
+                            submitLabel="Обновить"
+                            processing={form.processing}
+                        >
+                            <PublishRow icon={KeyRound} label="Ключ">
+                                {page.key}
+                            </PublishRow>
+                            <PublishRow icon={Eye} label="Видимость">
+                                {form.data.is_active ? 'на сайте' : 'скрыта'}
+                            </PublishRow>
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    className="size-4 accent-[#2271b1]"
+                                    checked={form.data.is_active}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'is_active',
+                                            event.target.checked,
+                                        )
+                                    }
+                                />
+                                Показывать страницу на сайте
+                            </label>
+                            <InputError message={form.errors.is_active} />
+                        </PublishBox>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </AppLayout>
     );
 }

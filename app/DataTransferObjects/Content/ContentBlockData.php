@@ -4,67 +4,43 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Content;
 
-use App\Support\HtmlSanitizer;
+use App\Cms\Blocks\BlockFields;
+use App\Cms\Blocks\BlockType;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Block payload — type + untranslated settings + per-locale content map. The
- * registry-validated `type` lives here; the BlockType implementation tells the
- * service which content fields need HTML sanitisation.
+ * Block payload — type + untranslated settings + per-locale content map, each
+ * reduced to the fields of the type's schema and stored as their type (rich
+ * text sanitised, see {@see BlockFields}).
  */
 final readonly class ContentBlockData
 {
     /**
-     * @param  array<string, mixed>  $settings
-     * @param  array<string, array<string, mixed>>  $translations  locale-keyed; values are the per-locale content map
+     * @param  array<string, mixed>|null  $settings  null when the form sent no settings: the stored ones stay
+     * @param  array<string, array<string, mixed>>  $translations  locale-keyed content; languages not sent keep theirs
      */
     public function __construct(
         public string $type,
-        public array $settings,
+        public ?array $settings,
         public array $translations,
     ) {}
 
-    /**
-     * @param  list<string>  $richTextFields  field names in `content` payloads that should be sanitised
-     */
-    public static function fromRequest(FormRequest $request, array $richTextFields = []): self
+    public static function fromRequest(FormRequest $request, BlockType $type): self
     {
-        /** @var array<string, mixed> $settings */
-        $settings = (array) ($request->validated('settings', []) ?? []);
+        $settings = $request->validated('settings');
+        $translations = [];
 
-        /** @var array<string, array<string, mixed>> $rawTranslations */
-        $rawTranslations = (array) ($request->validated('translations', []) ?? []);
-
-        // Treat each block translation payload like a content row: sanitise rich-text
-        // fields the BlockType declares. Other field types pass through as plain strings.
-        if ($richTextFields !== []) {
-            $rawTranslations = HtmlSanitizer::cleanTranslations(
-                self::normaliseForSanitiser($rawTranslations),
-                $richTextFields,
+        foreach ((array) ($request->validated('translations') ?? []) as $locale => $content) {
+            $translations[(string) $locale] = BlockFields::normalize(
+                $type->contentSchema(),
+                is_array($content) ? $content : [],
             );
         }
 
         return new self(
-            type: (string) $request->validated('type', ''),
-            settings: $settings,
-            translations: $rawTranslations,
+            type: $type->key(),
+            settings: is_array($settings) ? BlockFields::normalize($type->settingsSchema(), $settings) : null,
+            translations: $translations,
         );
-    }
-
-    /**
-     * HtmlSanitizer expects array<locale, array<field, mixed>>; coerce defensively
-     * so a malformed nested value never reaches the sanitiser.
-     *
-     * @param  array<string, mixed>  $raw
-     * @return array<string, array<string, mixed>>
-     */
-    private static function normaliseForSanitiser(array $raw): array
-    {
-        $out = [];
-        foreach ($raw as $locale => $data) {
-            $out[(string) $locale] = is_array($data) ? $data : [];
-        }
-
-        return $out;
     }
 }

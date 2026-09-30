@@ -52,9 +52,9 @@ class HtmlSanitizer
 
                 $value = $data[$field];
 
-                if ($value === null || is_string($value)) {
-                    $translations[$locale][$field] = self::clean($value);
-                }
+                // Anything but a string (an array smuggled past loose validation,
+                // a number) never reaches the page as markup.
+                $translations[$locale][$field] = is_string($value) ? self::clean($value) : null;
             }
         }
 

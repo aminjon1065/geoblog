@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import admin from '@/routes/admin';
 import type { SharedData } from '@/types';
 
 interface NotificationItem {
@@ -13,6 +14,10 @@ interface NotificationItem {
     subject_id: number | null;
     causer_name: string | null;
     created_at: string | null;
+    /** Russian labels from App\Services\Notifications\ActivityLabels. */
+    log_label?: string | null;
+    event_label?: string | null;
+    subject_label?: string | null;
 }
 
 /**
@@ -29,21 +34,32 @@ export function NotificationsBell() {
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     // Lazy-load the dropdown items only when first opened.
-    useEffect(() => {
-        if (!open || items.length > 0) return;
+    function toggle() {
+        const next = !open;
+        setOpen(next);
+
+        if (!next || items.length > 0 || loading) return;
+
         setLoading(true);
-        fetch('/admin/notifications', { headers: { Accept: 'application/json' } })
+        fetch(admin.notifications.index.url(), {
+            headers: { Accept: 'application/json' },
+        })
             .then((r) => (r.ok ? r.json() : { items: [] }))
-            .then((data: { items: NotificationItem[] }) => setItems(data.items ?? []))
+            .then((data: { items: NotificationItem[] }) =>
+                setItems(data.items ?? []),
+            )
             .catch(() => setItems([]))
             .finally(() => setLoading(false));
-    }, [open, items.length]);
+    }
 
     // Click-outside dismiss.
     useEffect(() => {
         if (!open) return;
         function onClick(e: MouseEvent) {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+            if (
+                wrapperRef.current &&
+                !wrapperRef.current.contains(e.target as Node)
+            ) {
                 setOpen(false);
             }
         }
@@ -53,7 +69,7 @@ export function NotificationsBell() {
 
     function markAllRead() {
         router.patch(
-            '/admin/notifications/read-all',
+            admin.notifications.readAll.url(),
             {},
             {
                 preserveScroll: true,
@@ -69,22 +85,24 @@ export function NotificationsBell() {
         <div ref={wrapperRef} className="relative">
             <button
                 type="button"
-                onClick={() => setOpen((s) => !s)}
-                className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Notifications"
+                onClick={toggle}
+                className="relative inline-flex h-[var(--wp-bar-height)] w-9 items-center justify-center text-[#a7aaad] hover:bg-[var(--wp-menu-submenu-bg)] hover:text-[var(--wp-menu-highlight)]"
+                aria-label="Уведомления"
             >
                 <Bell className="h-4 w-4" />
                 {unread > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                    <span className="absolute top-1 right-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--wp-error)] px-1 text-[10px] font-semibold text-white">
                         {unread > 99 ? '99+' : unread}
                     </span>
                 )}
             </button>
 
             {open && (
-                <div className="absolute right-0 z-50 mt-2 w-80 rounded-md border bg-background shadow-md">
+                <div className="absolute right-0 z-50 mt-0 w-80 rounded-[2px] border border-[#c3c4c7] bg-white text-[#3c434a] shadow-[0_3px_5px_rgba(0,0,0,0.2)]">
                     <div className="flex items-center justify-between border-b px-3 py-2">
-                        <span className="text-sm font-medium">Notifications</span>
+                        <span className="text-sm font-semibold text-[#1d2327]">
+                            Уведомления
+                        </span>
                         {unread > 0 && (
                             <Button
                                 size="sm"
@@ -92,7 +110,7 @@ export function NotificationsBell() {
                                 onClick={markAllRead}
                                 className="h-7 text-xs"
                             >
-                                Mark all read
+                                Отметить все прочитанными
                             </Button>
                         )}
                     </div>
@@ -100,12 +118,12 @@ export function NotificationsBell() {
                     <div className="max-h-80 overflow-y-auto">
                         {loading && (
                             <p className="px-3 py-3 text-sm text-muted-foreground">
-                                Loading…
+                                Загрузка…
                             </p>
                         )}
                         {!loading && items.length === 0 && (
                             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                                You're all caught up.
+                                Новых уведомлений нет.
                             </p>
                         )}
                         {items.map((n) => (
@@ -115,19 +133,32 @@ export function NotificationsBell() {
                             >
                                 <p className="line-clamp-2">
                                     <span className="font-medium">
-                                        {n.causer_name ?? 'System'}
+                                        {n.causer_name ?? 'Система'}
                                     </span>{' '}
                                     <span className="text-muted-foreground">
-                                        {n.event ?? n.description ?? ''}
+                                        {n.event_label ??
+                                            n.event ??
+                                            n.description ??
+                                            ''}
                                     </span>{' '}
-                                    {n.subject_type && (
+                                    {(n.subject_label ?? n.subject_type) && (
                                         <span className="rounded bg-secondary px-1.5 py-0.5 text-xs">
-                                            {n.subject_type}
+                                            {n.subject_label ?? n.subject_type}
                                         </span>
                                     )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {n.created_at}
+                                    {n.created_at
+                                        ? new Date(n.created_at).toLocaleString(
+                                              'ru-RU',
+                                              {
+                                                  day: 'numeric',
+                                                  month: 'long',
+                                                  hour: '2-digit',
+                                                  minute: '2-digit',
+                                              },
+                                          )
+                                        : ''}
                                 </p>
                             </div>
                         ))}
@@ -135,11 +166,11 @@ export function NotificationsBell() {
 
                     <div className="border-t px-3 py-2 text-right">
                         <Link
-                            href="/admin/audit"
+                            href={admin.audit.index.url()}
                             className="text-xs text-muted-foreground hover:text-foreground"
                             onClick={() => setOpen(false)}
                         >
-                            View full audit log →
+                            Весь журнал действий →
                         </Link>
                     </div>
                 </div>

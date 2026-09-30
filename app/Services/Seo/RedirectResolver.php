@@ -75,6 +75,59 @@ final class RedirectResolver
     }
 
     /**
+     * The normalized path a redirect target leads to on this site, or null when
+     * it leaves the site. Relative paths and absolute URLs on the site's own
+     * host are local; the query string and fragment don't take part in the
+     * lookup, so they are dropped.
+     */
+    public static function localPath(string $target): ?string
+    {
+        $target = trim($target);
+        $parts = $target === '' ? false : parse_url($target);
+
+        if ($parts === false) {
+            return null;
+        }
+
+        if (isset($parts['host'])) {
+            $ownHosts = array_filter([
+                parse_url((string) config('app.url'), PHP_URL_HOST),
+                request()->getHost(),
+            ]);
+
+            if (! in_array(strtolower($parts['host']), array_map('strtolower', $ownHosts), true)) {
+                return null;
+            }
+        } elseif (isset($parts['scheme'])) {
+            // mailto:, tel: and the like never come back to a path of ours.
+            return null;
+        }
+
+        return self::normalize($parts['path'] ?? '/');
+    }
+
+    /**
+     * An existing redirect that would send visitors from `$to` straight back
+     * to `$from` — the two would bounce between each other forever.
+     */
+    public function findReverse(string $from, string $to, ?int $ignoreId = null): ?Redirect
+    {
+        $target = self::localPath($to);
+
+        if ($target === null) {
+            return null;
+        }
+
+        $from = self::normalize($from);
+
+        return Redirect::query()
+            ->where('from_path', $target)
+            ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->get(['id', 'from_path', 'to_path'])
+            ->first(fn (Redirect $redirect): bool => self::localPath($redirect->to_path) === $from);
+    }
+
+    /**
      * @return array<string, array{to: string, status: int, id: int}>
      */
     private function map(): array

@@ -83,3 +83,74 @@ test('correct password must be provided to delete account', function () {
 
     expect($user->fresh())->not->toBeNull();
 });
+
+test('the only super administrator cannot delete their own account', function () {
+    $super = userWithRole('super_admin');
+
+    $this->actingAs($super)
+        ->from(route('profile.edit'))
+        ->delete(route('profile.destroy'), ['password' => 'password'])
+        ->assertSessionHasErrors([
+            'account' => 'Нельзя удалить единственного суперадминистратора сайта. Сначала назначьте эту роль другому пользователю.',
+        ])
+        ->assertRedirect(route('profile.edit'));
+
+    $this->assertAuthenticatedAs($super);
+    expect($super->fresh())->not->toBeNull();
+});
+
+test('a super administrator can delete their account while another one remains', function () {
+    $super = userWithRole('super_admin');
+    userWithRole('super_admin');
+
+    $this->actingAs($super)
+        ->delete(route('profile.destroy'), ['password' => 'password'])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/');
+
+    $this->assertGuest();
+    expect($super->fresh())->toBeNull();
+});
+
+test('the profile screen tells whether the account may be deleted', function () {
+    $super = userWithRole('super_admin');
+
+    $this->actingAs($super)
+        ->get(route('profile.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/profile')
+            ->where('canDeleteAccount', false)
+            ->where('roles', ['Суперадминистратор']));
+
+    $this->actingAs(userWithRole('editor'))
+        ->get(route('profile.edit'))
+        ->assertInertia(fn ($page) => $page
+            ->where('canDeleteAccount', true)
+            ->where('roles', ['Редактор']));
+});
+
+test('profile updates flash a russian confirmation', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => 'Новое имя',
+            'email' => $user->email,
+        ])
+        ->assertSessionHas('success', 'Профиль обновлён.');
+});
+
+test('profile validation errors are in russian', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => '',
+            'email' => 'not-an-email',
+        ])
+        ->assertSessionHasErrors([
+            'name' => 'Поле имя обязательно для заполнения.',
+            'email' => 'Значение поля e-mail должно быть действительным адресом электронной почты.',
+        ]);
+});

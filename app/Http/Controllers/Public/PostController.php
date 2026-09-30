@@ -71,10 +71,17 @@ class PostController extends Controller
         ]);
     }
 
+    /**
+     * A post on the site. A signed link from the editor (`?preview=1`) also
+     * opens drafts and scheduled posts, like WordPress' preview; such pages
+     * are kept out of search engines.
+     */
     public function show(Request $request, string $locale, string $slug): Response
     {
+        $isPreview = $request->boolean('preview') && $request->hasValidSignature();
+
         $post = Post::query()
-            ->published()
+            ->when(! $isPreview, fn ($query) => $query->published())
             ->whereHas('translation')
             ->where('slug', $slug)
             ->with([
@@ -90,10 +97,13 @@ class PostController extends Controller
             ->map(fn (Post $p): array => PostResource::forPublicCard($p))
             ->values();
 
-        return Inertia::render('Public/News/Show', [
+        $response = Inertia::render('Public/News/Show', [
             'post' => PostResource::forPublicShow($post, $request),
             'related' => $related,
             'structuredData' => SeoBuilder::articleStructuredData($post, $request),
+            'isPreview' => $isPreview,
         ]);
+
+        return $isPreview ? $response->withViewData(['noindex' => true]) : $response;
     }
 }

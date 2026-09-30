@@ -17,7 +17,7 @@ final class TagSearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Tags';
+        return 'Метки';
     }
 
     public function permission(): ?string

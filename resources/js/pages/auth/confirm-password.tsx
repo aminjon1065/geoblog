@@ -1,48 +1,53 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import {
+    LoginBox,
+    LoginErrors,
+    LoginField,
+    LoginPasswordInput,
+    loginButtonClass,
+} from '@/layouts/auth/auth-simple-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { store } from '@/routes/password/confirm';
 
 export default function ConfirmPassword() {
     return (
         <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
+            title="Подтверждение пароля"
+            description="Это защищённый раздел сайта. Чтобы продолжить, введите пароль ещё раз."
         >
-            <Head title="Confirm password" />
+            <Head title="Подтверждение пароля" />
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                placeholder="Password"
-                                autoComplete="current-password"
-                                autoFocus
-                            />
+                    <>
+                        <LoginErrors errors={errors} />
 
-                            <InputError message={errors.password} />
-                        </div>
+                        <LoginBox>
+                            <LoginField id="password" label="Пароль">
+                                <LoginPasswordInput
+                                    id="password"
+                                    name="password"
+                                    autoComplete="current-password"
+                                    autoFocus
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.password) || undefined
+                                    }
+                                />
+                            </LoginField>
 
-                        <div className="flex items-center">
-                            <Button
-                                className="w-full"
-                                disabled={processing}
-                                data-test="confirm-password-button"
-                            >
-                                {processing && <Spinner />}
-                                Confirm password
-                            </Button>
-                        </div>
-                    </div>
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    className={loginButtonClass}
+                                    disabled={processing}
+                                    data-test="confirm-password-button"
+                                >
+                                    Подтвердить
+                                </button>
+                            </div>
+                        </LoginBox>
+                    </>
                 )}
             </Form>
         </AuthLayout>

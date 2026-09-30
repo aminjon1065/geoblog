@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import NewsCard from '@/components/public/NewsCard';
 import PageHero from '@/components/public/PageHero';
+import Pagination from '@/components/public/Pagination';
 import Section from '@/components/public/Section';
 import { SeoHead } from '@/components/public/SeoHead';
 import PublicLayout from '@/layouts/public-layout';
@@ -132,27 +133,7 @@ export default function Index() {
                             ))}
                         </div>
 
-                        {(posts.links?.length ?? 0) > 3 && (
-                            <nav className="mt-10 flex items-center justify-center gap-1">
-                                {posts.links.map((link, i) => (
-                                    <Link
-                                        key={i}
-                                        href={link.url ?? '#'}
-                                        className={cn(
-                                            'rounded-md px-3 py-1.5 text-sm font-medium transition',
-                                            link.active
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'text-muted-foreground hover:bg-muted',
-                                            !link.url &&
-                                                'pointer-events-none opacity-40',
-                                        )}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
-                            </nav>
-                        )}
+                        <Pagination links={posts.links} />
                     </>
                 ) : (
                     <div className="text-center">

@@ -65,3 +65,33 @@ test('search excludes providers the viewer has no permission for', function () {
     expect($groupTypes)->not->toContain('tag');
     expect($groupTypes)->not->toContain('user');
 });
+
+test('search groups are labelled in russian', function () {
+    $admin = userWithRole('admin');
+    $this->actingAs($admin);
+
+    \App\Models\User::factory()->create(['name' => 'Searchable Person']);
+
+    $this->getJson('/admin/search?q=Searchable')
+        ->assertOk()
+        ->assertJsonPath('groups.0.type', 'user')
+        ->assertJsonPath('groups.0.label', 'Пользователи');
+});
+
+test('media search results open the attachment details in the library', function () {
+    $this->actingAs(userWithRole('admin'));
+
+    $media = \App\Models\Media::create([
+        'disk' => 'public',
+        'path' => 'media/pamir-map.jpg',
+        'name' => 'Карта Памира',
+        'mime_type' => 'image/jpeg',
+        'size' => 1024,
+    ]);
+
+    $this->getJson('/admin/search?q='.urlencode('Карта Памира'))
+        ->assertOk()
+        ->assertJsonPath('groups.0.type', 'media')
+        ->assertJsonPath('groups.0.items.0.title', 'Карта Памира')
+        ->assertJsonPath('groups.0.items.0.url', "/admin/media?item={$media->id}");
+});

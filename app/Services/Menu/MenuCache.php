@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Menu;
 
 use App\Http\Resources\MenuResource;
+use App\Models\Locale;
 use App\Models\Menu;
 use Illuminate\Support\Facades\Cache;
 
@@ -14,7 +15,8 @@ use Illuminate\Support\Facades\Cache;
  * The tree is rebuilt every request without this cache (HandleInertiaRequests
  * runs `Menu::with('items.translations')->get()` on every page load). Caching
  * the resolved output is safe because we explicitly invalidate from
- * MenuService / MenuItemService on every write.
+ * MenuService / MenuItemService on every write, and ContentPageService
+ * invalidates it when a page — the target of "page" links — changes.
  */
 final class MenuCache
 {
@@ -38,13 +40,14 @@ final class MenuCache
     }
 
     /**
-     * Invalidate every locale's snapshot. Called after any Menu / MenuItem write.
+     * Invalidate every locale's snapshot. Called after any Menu / MenuItem write
+     * and whenever a content page (a link target) is saved or deleted.
      */
     public function flush(): void
     {
-        // Active locales drive what we store; flush each. Inactive locales have no
-        // cached row to evict.
-        foreach (\App\Models\Locale::where('is_active', true)->pluck('code') as $code) {
+        // Every known locale, not only the active ones: a locale switched off
+        // and on again must not come back with a snapshot from before.
+        foreach (Locale::query()->pluck('code') as $code) {
             Cache::forget(self::PREFIX.(string) $code);
         }
     }

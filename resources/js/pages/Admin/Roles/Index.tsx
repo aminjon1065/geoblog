@@ -1,85 +1,124 @@
 import { Head, Link } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
+import { RowAction, RowActions } from '@/components/wp/list-table';
+import { PageHeader } from '@/components/wp/page-header';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { edit } from '@/routes/admin/roles';
+import { index as usersIndex } from '@/routes/admin/users';
 
-interface RoleRow {
+type RoleRow = {
     id: number;
     name: string;
+    label: string;
+    description: string | null;
     is_super_admin: boolean;
     permissions_count: number;
     users_count: number;
-}
+};
 
-interface Props {
+type Props = {
     roles: RoleRow[];
-}
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Roles', href: '/admin/roles' },
-];
+};
 
 export default function RolesIndex({ roles }: Props) {
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Roles" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading
-                    title="Roles"
-                    description="Edit which permissions each role inherits. New roles are added via seeders."
-                />
+    const header = (
+        <tr>
+            <th scope="col" className="column-primary">
+                Роль
+            </th>
+            <th scope="col">Описание</th>
+            <th scope="col" className="w-32 text-center!">
+                Пользователи
+            </th>
+            <th scope="col" className="w-32 text-center!">
+                Права
+            </th>
+        </tr>
+    );
 
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-medium">Name</th>
-                                <th className="px-4 py-3 text-left font-medium">Users</th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Permissions
-                                </th>
-                                <th className="px-4 py-3 text-right font-medium">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {roles.map((role) => (
-                                <tr key={role.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3 font-medium">
-                                        {role.name}
-                                        {role.is_super_admin && (
-                                            <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                                                implicit
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {role.users_count}
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {role.is_super_admin
-                                            ? 'all (via Gate::before)'
-                                            : role.permissions_count}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link
-                                                href={`/admin/roles/${role.id}/edit`}
-                                            >
+    return (
+        <AppLayout>
+            <Head title="Роли" />
+
+            <PageHeader title="Роли" />
+            <p className="mt-1 mb-3 text-[13px] text-[#50575e]">
+                Роль определяет, что пользователь может делать на сайте.
+                Отметьте права роли на странице её редактирования — изменения
+                вступают в силу сразу.
+            </p>
+
+            <div className="overflow-x-auto">
+                <table className="wp-list-table">
+                    <thead>{header}</thead>
+                    <tbody>
+                        {roles.map((role) => (
+                            <tr key={role.id}>
+                                <td className="column-primary">
+                                    <strong>
+                                        <Link
+                                            href={edit.url(role.id)}
+                                            className="row-title"
+                                        >
+                                            {role.label}
+                                        </Link>
+                                    </strong>
+                                    {role.is_super_admin && (
+                                        <span className="post-state">
+                                            {' '}
+                                            — все права
+                                        </span>
+                                    )}
+                                    <RowActions>
+                                        <RowAction>
+                                            <Link href={edit.url(role.id)}>
                                                 {role.is_super_admin
-                                                    ? 'View'
-                                                    : 'Edit'}
+                                                    ? 'Просмотреть'
+                                                    : 'Изменить'}
                                             </Link>
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        </RowAction>
+                                        {role.users_count > 0 && (
+                                            <RowAction>
+                                                <Link
+                                                    href={usersIndex.url({
+                                                        query: {
+                                                            role: role.name,
+                                                        },
+                                                    })}
+                                                >
+                                                    Пользователи
+                                                </Link>
+                                            </RowAction>
+                                        )}
+                                    </RowActions>
+                                </td>
+                                <td>{role.description ?? '—'}</td>
+                                <td className="text-center">
+                                    {role.users_count > 0 ? (
+                                        <Link
+                                            href={usersIndex.url({
+                                                query: { role: role.name },
+                                            })}
+                                        >
+                                            {role.users_count}
+                                        </Link>
+                                    ) : (
+                                        0
+                                    )}
+                                </td>
+                                <td className="text-center">
+                                    {role.is_super_admin
+                                        ? 'Все'
+                                        : role.permissions_count}
+                                </td>
+                            </tr>
+                        ))}
+                        {roles.length === 0 && (
+                            <tr className="no-items">
+                                <td colSpan={4}>Роли не найдены.</td>
+                            </tr>
+                        )}
+                    </tbody>
+                    <tfoot>{header}</tfoot>
+                </table>
             </div>
         </AppLayout>
     );

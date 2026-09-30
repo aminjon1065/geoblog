@@ -11,16 +11,17 @@ namespace App\Cms\Blocks;
  * `settings` (untranslated config) and per-locale `content` payloads take.
  *
  * The shapes are intentionally arrays-of-strings rather than rich schemas — the
- * admin form maps them to inputs and the public renderer reads the same map.
- * Anything richer (validation, defaults beyond null) should land in PHP-side
- * services or in the React block editor component.
+ * admin form maps them to inputs, the Form Requests derive their validation
+ * rules from them and the public renderer reads the same map. The field types
+ * are listed in {@see BlockFields}: string, text, html, url, integer and
+ * `choice:a,b,c`.
  */
 interface BlockType
 {
     /** Stable identifier persisted in `content_blocks.type`. */
     public function key(): string;
 
-    /** Human-readable label for the admin UI ("Hero", "Rich Text", ...). */
+    /** Human-readable label for the admin UI ("Обложка", "Текстовый блок", ...). */
     public function label(): string;
 
     /**

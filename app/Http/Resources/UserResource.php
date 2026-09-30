@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Services\Users\RoleCatalog;
 
 final class UserResource
 {
@@ -22,7 +23,8 @@ final class UserResource
             'email_verified' => $user->email_verified_at !== null,
             'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
             'is_super_admin' => $user->isSuperAdmin(),
-            'roles' => $user->getRoleNames()->all(),
+            'roles' => self::roles($user),
+            'posts_count' => (int) ($user->posts_count ?? 0),
             'created_at' => $user->created_at?->toDateString(),
             'can' => [
                 'update' => $viewer?->can('update', $user) ?? false,
@@ -46,7 +48,20 @@ final class UserResource
             'email_verified' => $user->email_verified_at !== null,
             'two_factor_enabled' => $user->two_factor_confirmed_at !== null,
             'is_super_admin' => $user->isSuperAdmin(),
-            'roles' => $user->getRoleNames()->all(),
+            'roles' => RoleCatalog::sort($user->getRoleNames()),
+            'posts_count' => $user->posts()->count(),
+            'created_at' => $user->created_at?->toDateString(),
         ];
+    }
+
+    /**
+     * @return list<array{name: string, label: string}>
+     */
+    private static function roles(User $user): array
+    {
+        return array_map(
+            fn (string $name): array => ['name' => $name, 'label' => RoleCatalog::label($name)],
+            RoleCatalog::sort($user->getRoleNames()),
+        );
     }
 }

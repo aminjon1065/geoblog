@@ -1,413 +1,274 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { FormEvent, useState } from 'react';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { useConfirmDialog } from '@/components/admin/content/confirm-dialog';
+import { Field } from '@/components/admin/content/fields';
+import type { AdminLocale } from '@/components/admin/content/types';
+import { useInitialLocale } from '@/components/admin/content/use-view-locale';
+import {
+    AddCustomLinkBox,
+    AddPagesBox,
+} from '@/components/admin/menus/add-menu-items';
+import { MenuItemList } from '@/components/admin/menus/menu-item-node';
+import type { MenuTreeContext } from '@/components/admin/menus/menu-item-node';
+import {
+    MENU_LOCATIONS,
+    flattenItems,
+    labelOf,
+} from '@/components/admin/menus/types';
+import type {
+    ContentPageOption,
+    MenuItemShape,
+    MenuShape,
+} from '@/components/admin/menus/types';
+import { PageHeader } from '@/components/wp/page-header';
+import { Postbox } from '@/components/wp/postbox';
+import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { create, destroy, edit, update } from '@/routes/admin/menus';
+import {
+    destroy as destroyItem,
+    reorder as reorderItems,
+} from '@/routes/admin/menus/items';
+import type { SharedData } from '@/types';
 
-interface Locale {
-    code: string;
-    name: string;
-}
-
-interface ContentPageOption {
-    id: number;
-    slug: string;
-}
-
-type LinkType = 'internal' | 'external' | 'page';
-
-interface MenuItemShape {
-    id: number;
-    parent_id: number | null;
-    sort_order: number;
-    link_type: LinkType;
-    link_target: string | null;
-    open_in_new_tab: boolean;
-    translations: Record<string, { label: string }>;
-    children: MenuItemShape[];
-}
-
-interface MenuShape {
-    id: number;
-    slug: string;
-    name: string;
-    items: MenuItemShape[];
-}
-
-interface Props {
+type Props = {
     menu: MenuShape;
-    locales: Locale[];
+    menus: { id: number; name: string; slug: string }[];
+    locales: AdminLocale[];
     contentPages: ContentPageOption[];
-}
+};
 
-interface MetaForm {
-    slug: string;
-    name: string;
-}
-
-export default function MenusEdit({ menu, locales, contentPages }: Props) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/dashboard' },
-        { title: 'Menus', href: '/admin/menus' },
-        { title: menu.name, href: `/admin/menus/${menu.id}/edit` },
-    ];
-
-    const metaForm = useForm<MetaForm>({
-        slug: menu.slug,
-        name: menu.name,
-    });
-
-    function submitMeta(e: FormEvent) {
-        e.preventDefault();
-        metaForm.put(`/admin/menus/${menu.id}`, { preserveScroll: true });
-    }
-
-    function addItem() {
-        const primary = locales[0]?.code ?? 'en';
-        router.post(
-            `/admin/menus/${menu.id}/items`,
-            {
-                link_type: 'internal',
-                link_target: '/',
-                open_in_new_tab: false,
-                translations: { [primary]: { label: 'New item' } },
-            },
-            { preserveScroll: true },
-        );
-    }
-
-    // Flatten tree to a linear list (one level deep — children rendered nested)
-    // so the top-level reorder via arrows is straightforward.
-    const topLevel = menu.items.filter((i) => i.parent_id === null);
-
-    function moveTopLevel(index: number, direction: -1 | 1) {
-        const ids = topLevel.map((i) => i.id);
-        const target = index + direction;
-        if (target < 0 || target >= ids.length) return;
-        [ids[index], ids[target]] = [ids[target], ids[index]];
-        router.patch(
-            `/admin/menus/${menu.id}/items/reorder`,
-            { order: ids },
-            { preserveScroll: true },
-        );
-    }
-
-    function deleteItem(itemId: number) {
-        router.delete(`/admin/menus/${menu.id}/items/${itemId}`, {
-            preserveScroll: true,
-        });
-    }
-
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit menu: ${menu.name}`} />
-            <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
-                <Heading
-                    title={`Menu: ${menu.name}`}
-                    description={`Slug: ${menu.slug} — exposed to the frontend at usePage().props.menus.${menu.slug}`}
-                />
-
-                <form
-                    onSubmit={submitMeta}
-                    className="max-w-2xl space-y-4 rounded-lg border bg-card p-6"
-                >
-                    <Heading variant="small" title="Menu settings" />
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
-                                value={metaForm.data.name}
-                                onChange={(e) => metaForm.setData('name', e.target.value)}
-                            />
-                            <InputError message={metaForm.errors.name} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="slug">Slug</Label>
-                            <Input
-                                id="slug"
-                                value={metaForm.data.slug}
-                                onChange={(e) => metaForm.setData('slug', e.target.value)}
-                            />
-                            <InputError message={metaForm.errors.slug} />
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Button type="submit" disabled={metaForm.processing}>
-                            Save menu
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/menus">Back</Link>
-                        </Button>
-                    </div>
-                </form>
-
-                <div className="max-w-4xl space-y-3 rounded-lg border bg-card p-6">
-                    <div className="flex items-center justify-between">
-                        <Heading variant="small" title="Items" description={`${topLevel.length} top-level item(s)`} />
-                        <Button onClick={addItem} variant="outline">
-                            <Plus className="mr-1 h-4 w-4" />
-                            Add item
-                        </Button>
-                    </div>
-
-                    {topLevel.length === 0 && (
-                        <p className="py-6 text-center text-sm text-muted-foreground">
-                            No items yet. Click "Add item" to start.
-                        </p>
-                    )}
-
-                    {topLevel.map((item, index) => (
-                        <MenuItemEditor
-                            key={item.id}
-                            menuId={menu.id}
-                            item={item}
-                            locales={locales}
-                            contentPages={contentPages}
-                            allItems={menu.items}
-                            isFirst={index === 0}
-                            isLast={index === topLevel.length - 1}
-                            onMoveUp={() => moveTopLevel(index, -1)}
-                            onMoveDown={() => moveTopLevel(index, 1)}
-                            onDelete={() => deleteItem(item.id)}
-                        />
-                    ))}
-                </div>
-            </div>
-        </AppLayout>
-    );
-}
-
-interface MenuItemEditorProps {
-    menuId: number;
-    item: MenuItemShape;
-    locales: Locale[];
-    contentPages: ContentPageOption[];
-    allItems: MenuItemShape[];
-    isFirst: boolean;
-    isLast: boolean;
-    onMoveUp: () => void;
-    onMoveDown: () => void;
-    onDelete: () => void;
-}
-
-interface ItemForm {
-    parent_id: number | null;
-    link_type: LinkType;
-    link_target: string;
-    open_in_new_tab: boolean;
-    translations: Record<string, { label: string }>;
-}
-
-function MenuItemEditor({
-    menuId,
-    item,
+export default function MenusEdit({
+    menu,
+    menus,
     locales,
     contentPages,
-    allItems,
-    isFirst,
-    isLast,
-    onMoveUp,
-    onMoveDown,
-    onDelete,
-}: MenuItemEditorProps) {
-    const [activeLocale, setActiveLocale] = useState(locales[0]?.code ?? '');
+}: Props) {
+    const { can } = usePermissions();
+    const { locale } = usePage<SharedData>().props;
+    const { confirm, dialog } = useConfirmDialog();
+    const primaryLocale = useInitialLocale(locales);
+    const [switchTo, setSwitchTo] = useState(menu.id);
 
-    const initialTranslations: Record<string, { label: string }> = {};
-    for (const l of locales) {
-        initialTranslations[l.code] = item.translations[l.code] ?? { label: '' };
-    }
+    const settings = useForm({ name: menu.name, slug: menu.slug });
 
-    const form = useForm<ItemForm>({
-        parent_id: item.parent_id,
-        link_type: item.link_type,
-        link_target: item.link_target ?? '',
-        open_in_new_tab: item.open_in_new_tab,
-        translations: initialTranslations,
-    });
+    const saveSettings = (event: FormEvent) => {
+        event.preventDefault();
+        settings.submit(update(menu.id), { preserveScroll: true });
+    };
 
-    function submit(e: FormEvent) {
-        e.preventDefault();
-        form.put(`/admin/menus/${menuId}/items/${item.id}`, {
-            preserveScroll: true,
+    const labelOrder = [locale, ...locales.map((item) => item.code)];
+
+    const context: MenuTreeContext = {
+        menuId: menu.id,
+        locales,
+        labelOrder,
+        contentPages,
+        allItems: flattenItems(menu.items),
+        onReorder: (orderedIds) =>
+            router.patch(
+                reorderItems.url(menu.id),
+                { order: orderedIds },
+                { preserveScroll: true },
+            ),
+        onDelete: (item: MenuItemShape) =>
+            confirm({
+                title: 'Удалить пункт меню?',
+                description:
+                    item.children.length > 0
+                        ? `Пункт «${labelOf(item.translations, labelOrder) || 'без названия'}» будет удалён, его подпункты поднимутся на верхний уровень.`
+                        : `Пункт «${labelOf(item.translations, labelOrder) || 'без названия'}» будет удалён из меню.`,
+                onConfirm: () =>
+                    router.delete(
+                        destroyItem.url({ menu: menu.id, item: item.id }),
+                        { preserveScroll: true },
+                    ),
+            }),
+    };
+
+    const askDeleteMenu = () =>
+        confirm({
+            title: 'Удалить меню?',
+            description: `Меню «${menu.name}» и все его пункты будут удалены.`,
+            onConfirm: () => router.delete(destroy.url(menu.id)),
         });
-    }
 
-    // Parent options: any item in this menu OTHER than this item or its descendants.
-    // For v1 we don't compute descendant exclusion (UI doesn't support deep nesting).
-    const parentOptions = allItems.filter((i) => i.id !== item.id);
-
-    function setTranslation(locale: string, label: string) {
-        form.setData('translations', {
-            ...form.data.translations,
-            [locale]: { label },
-        });
-    }
+    const location = MENU_LOCATIONS[menu.slug];
 
     return (
-        <form
-            onSubmit={submit}
-            className="space-y-4 rounded-md border bg-background p-4"
-        >
-            <div className="flex items-center justify-between">
-                <div>
-                    <h4 className="font-medium">
-                        {initialTranslations[locales[0]?.code]?.label || '(no label)'}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                        {item.link_type}
-                        {item.link_target ? ` — ${item.link_target}` : ''}
-                    </p>
-                </div>
-                <div className="flex items-center gap-1">
-                    <Button type="button" size="sm" variant="ghost" disabled={isFirst} onClick={onMoveUp}>
-                        <ArrowUp className="h-3 w-3" />
-                    </Button>
-                    <Button type="button" size="sm" variant="ghost" disabled={isLast} onClick={onMoveDown}>
-                        <ArrowDown className="h-3 w-3" />
-                    </Button>
-                    <ConfirmButton
-                        title="Delete item?"
-                        description="The item and its translations will be removed."
-                        onConfirm={onDelete}
-                        size="sm"
-                    >
-                        <Trash2 className="h-3 w-3" />
-                    </ConfirmButton>
-                </div>
-            </div>
+        <AppLayout>
+            <Head title={`Меню «${menu.name}»`} />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                    <Label className="text-xs">Link type</Label>
+            <PageHeader
+                title="Меню"
+                action={
+                    can('menus.manage')
+                        ? { label: 'Добавить меню', href: create.url() }
+                        : null
+                }
+            />
+
+            {menus.length > 1 && (
+                <form
+                    className="mt-2 mb-4 flex flex-wrap items-center gap-2 border border-[#c3c4c7] bg-white px-3 py-2.5 text-[13px] shadow-[0_1px_1px_rgba(0,0,0,0.04)]"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        router.visit(edit.url(switchTo));
+                    }}
+                >
+                    <label htmlFor="switch-menu">
+                        Выберите меню для изменения:
+                    </label>
                     <select
-                        value={form.data.link_type}
-                        onChange={(e) => {
-                            const newType = e.target.value as LinkType;
-                            form.setData('link_type', newType);
-                            // Reset target when type changes to avoid stale data sneaking in
-                            // (e.g. a page id sitting in an `internal` row).
-                            form.setData('link_target', '');
-                        }}
-                        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                    >
-                        <option value="internal">Internal path</option>
-                        <option value="external">External URL</option>
-                        <option value="page">Content page</option>
-                    </select>
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs">Parent</Label>
-                    <select
-                        value={form.data.parent_id ?? ''}
-                        onChange={(e) =>
-                            form.setData(
-                                'parent_id',
-                                e.target.value === '' ? null : Number(e.target.value),
-                            )
+                        id="switch-menu"
+                        className="wp-select"
+                        value={switchTo}
+                        onChange={(event) =>
+                            setSwitchTo(Number(event.target.value))
                         }
-                        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                     >
-                        <option value="">— Top level —</option>
-                        {parentOptions.map((opt) => (
-                            <option key={opt.id} value={opt.id}>
-                                {opt.translations[locales[0]?.code]?.label || `#${opt.id}`}
+                        {menus.map((item) => (
+                            <option key={item.id} value={item.id}>
+                                {item.name}
+                                {MENU_LOCATIONS[item.slug]
+                                    ? ` (${MENU_LOCATIONS[item.slug]})`
+                                    : ''}
                             </option>
                         ))}
                     </select>
-                </div>
-            </div>
-
-            <div className="space-y-1">
-                <Label className="text-xs">Target</Label>
-                {form.data.link_type === 'page' ? (
-                    <select
-                        value={form.data.link_target}
-                        onChange={(e) => form.setData('link_target', e.target.value)}
-                        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                    >
-                        <option value="">— Select a page —</option>
-                        {contentPages.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                /{p.slug}
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    <Input
-                        value={form.data.link_target}
-                        onChange={(e) => form.setData('link_target', e.target.value)}
-                        placeholder={
-                            form.data.link_type === 'external'
-                                ? 'https://example.com'
-                                : '/about'
-                        }
-                    />
-                )}
-                <InputError message={form.errors.link_target} />
-            </div>
-
-            <div className="flex items-center gap-2">
-                <Checkbox
-                    id={`new-tab-${item.id}`}
-                    checked={form.data.open_in_new_tab}
-                    onCheckedChange={(checked) =>
-                        form.setData('open_in_new_tab', checked === true)
-                    }
-                />
-                <Label htmlFor={`new-tab-${item.id}`} className="text-sm">
-                    Open in new tab
-                </Label>
-            </div>
-
-            <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                    <Label className="text-xs uppercase text-muted-foreground">
-                        Labels
-                    </Label>
-                    <div className="flex gap-1">
-                        {locales.map((l) => (
-                            <button
-                                key={l.code}
-                                type="button"
-                                onClick={() => setActiveLocale(l.code)}
-                                className={`px-2 py-1 text-xs ${
-                                    activeLocale === l.code
-                                        ? 'rounded bg-primary text-primary-foreground'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                }`}
+                    <button type="submit" className="wp-button">
+                        Выбрать
+                    </button>
+                    {can('menus.manage') && (
+                        <span>
+                            или{' '}
+                            <Link
+                                href={create.url()}
+                                className="text-[#2271b1] underline hover:text-[#135e96]"
                             >
-                                {l.code}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                                создайте новое меню
+                            </Link>
+                            .
+                        </span>
+                    )}
+                </form>
+            )}
 
-                {locales.map((locale) => (
-                    <div
-                        key={locale.code}
-                        className={activeLocale === locale.code ? '' : 'hidden'}
-                    >
-                        <Input
-                            value={form.data.translations[locale.code]?.label ?? ''}
-                            onChange={(e) => setTranslation(locale.code, e.target.value)}
-                            placeholder={`Label in ${locale.name}`}
+            <div className="mt-2 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                <section
+                    aria-labelledby="menu-structure-heading"
+                    className="min-w-0 border border-[#c3c4c7] bg-white shadow-[0_1px_1px_rgba(0,0,0,0.04)]"
+                >
+                    <div className="border-b border-[#c3c4c7] px-3 py-2">
+                        <h2
+                            id="menu-structure-heading"
+                            className="text-[14px] font-semibold text-[#1d2327]"
+                        >
+                            Структура меню «{menu.name}»
+                        </h2>
+                    </div>
+                    <div className="space-y-3 p-3">
+                        {menu.items.length === 0 ? (
+                            <p className="text-[13px] text-[#646970]">
+                                В меню пока нет пунктов. Добавьте страницы или
+                                ссылки из блоков справа.
+                            </p>
+                        ) : (
+                            <p className="text-[13px] text-[#646970]">
+                                Нажмите на стрелку справа от пункта, чтобы
+                                изменить текст, адрес, родителя или порядок.
+                            </p>
+                        )}
+                        <MenuItemList
+                            items={menu.items}
+                            depth={0}
+                            context={context}
                         />
                     </div>
-                ))}
-                <InputError message={form.errors.translations} />
+                </section>
+
+                <div className="space-y-5">
+                    <Postbox title="Настройки меню" collapsible={false}>
+                        <form onSubmit={saveSettings} className="space-y-4">
+                            <Field
+                                label="Название меню"
+                                htmlFor="menu-name"
+                                error={settings.errors.name}
+                            >
+                                <input
+                                    id="menu-name"
+                                    className="wp-input w-full"
+                                    value={settings.data.name}
+                                    onChange={(event) =>
+                                        settings.setData(
+                                            'name',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <Field
+                                label="Ярлык"
+                                htmlFor="menu-slug"
+                                error={settings.errors.slug}
+                                description={
+                                    location
+                                        ? `По этому ярлыку меню показывается на сайте: ${location.toLowerCase()}.`
+                                        : 'Сайт показывает меню с ярлыками header (шапка) и footer (подвал).'
+                                }
+                            >
+                                <input
+                                    id="menu-slug"
+                                    className="wp-input w-full"
+                                    value={settings.data.slug}
+                                    onChange={(event) =>
+                                        settings.setData(
+                                            'slug',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                            <div className="-mx-3 -mb-3 flex items-center justify-between gap-2 border-t border-[#dcdcde] bg-[#f6f7f7] px-3 py-2.5">
+                                {can('menus.manage') ? (
+                                    <button
+                                        type="button"
+                                        className="wp-link-button is-danger text-[13px]"
+                                        onClick={askDeleteMenu}
+                                    >
+                                        Удалить меню
+                                    </button>
+                                ) : (
+                                    <span />
+                                )}
+                                <button
+                                    type="submit"
+                                    className="wp-button is-primary"
+                                    disabled={settings.processing}
+                                >
+                                    {settings.processing
+                                        ? 'Сохранение…'
+                                        : 'Сохранить меню'}
+                                </button>
+                            </div>
+                        </form>
+                    </Postbox>
+
+                    <AddPagesBox
+                        menuId={menu.id}
+                        contentPages={contentPages}
+                        locales={locales}
+                        primaryLocale={primaryLocale}
+                    />
+                    <AddCustomLinkBox
+                        menuId={menu.id}
+                        primaryLocale={primaryLocale}
+                    />
+                </div>
             </div>
 
-            <Button type="submit" size="sm" disabled={form.processing}>
-                Save item
-            </Button>
-        </form>
+            {dialog}
+        </AppLayout>
     );
 }

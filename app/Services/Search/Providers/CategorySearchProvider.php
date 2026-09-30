@@ -17,7 +17,7 @@ final class CategorySearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Categories';
+        return 'Рубрики';
     }
 
     public function permission(): ?string

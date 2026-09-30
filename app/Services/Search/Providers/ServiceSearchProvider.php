@@ -17,7 +17,7 @@ final class ServiceSearchProvider implements SearchProvider
 
     public function label(): string
     {
-        return 'Services';
+        return 'Услуги';
     }
 
     public function permission(): ?string
@@ -41,7 +41,7 @@ final class ServiceSearchProvider implements SearchProvider
             ->map(fn (Service $s): array => [
                 'id' => $s->id,
                 'title' => $s->translation?->title ?? $s->slug,
-                'subtitle' => $s->is_active ? 'active' : 'inactive',
+                'subtitle' => $s->is_active ? 'Активна' : 'Отключена',
                 'url' => "/admin/services/{$s->id}/edit",
             ])
             ->all();

@@ -79,7 +79,7 @@ test('storing a post sanitizes content before persisting', function () {
                 'content' => '<p>safe</p><script>alert(1)</script><img src="x" onerror="alert(1)">',
             ],
         ],
-    ])->assertRedirect(route('admin.posts.index'));
+    ])->assertRedirect(route('admin.posts.edit', Post::firstOrFail()));
 
     $stored = Post::firstOrFail()->translations()->where('locale', 'ru')->value('content');
 
@@ -106,7 +106,7 @@ test('updating a post re-sanitizes content', function () {
                 'content' => '<p>new</p><iframe src="https://evil.example"></iframe>',
             ],
         ],
-    ])->assertRedirect(route('admin.posts.index'));
+    ])->assertRedirect(route('admin.posts.edit', $post));
 
     $stored = $post->translations()->where('locale', 'ru')->value('content');
 

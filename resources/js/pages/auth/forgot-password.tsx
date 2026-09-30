@@ -1,11 +1,13 @@
-// Components
-import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Form, Head, Link } from '@inertiajs/react';
+import {
+    LoginBox,
+    LoginErrors,
+    LoginField,
+    LoginMessage,
+    LoginNav,
+    loginButtonClass,
+    loginInputClass,
+} from '@/layouts/auth/auth-simple-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
@@ -13,56 +15,52 @@ import { email } from '@/routes/password';
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <AuthLayout
-            title="Forgot password"
-            description="Enter your email to receive a password reset link"
+            title="Восстановление пароля"
+            description="Введите ваш e-mail. Вы получите письмо со ссылкой для создания нового пароля."
         >
-            <Head title="Forgot password" />
+            <Head title="Восстановление пароля" />
 
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
+            {status && <LoginMessage type="success">{status}</LoginMessage>}
 
-            <div className="space-y-6">
-                <Form {...email.form()}>
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
+            <Form {...email.form()}>
+                {({ processing, errors }) => (
+                    <>
+                        <LoginErrors errors={errors} />
+
+                        <LoginBox>
+                            <LoginField id="email" label="E-mail">
+                                <input
                                     id="email"
                                     type="email"
                                     name="email"
-                                    autoComplete="off"
+                                    className={loginInputClass}
+                                    autoComplete="email"
                                     autoFocus
-                                    placeholder="email@example.com"
+                                    required
+                                    aria-invalid={
+                                        Boolean(errors.email) || undefined
+                                    }
                                 />
+                            </LoginField>
 
-                                <InputError message={errors.email} />
-                            </div>
-
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    className={loginButtonClass}
                                     disabled={processing}
                                     data-test="email-password-reset-link-button"
                                 >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Email password reset link
-                                </Button>
+                                    Получить новый пароль
+                                </button>
                             </div>
-                        </>
-                    )}
-                </Form>
+                        </LoginBox>
+                    </>
+                )}
+            </Form>
 
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
-                </div>
-            </div>
+            <LoginNav>
+                <Link href={login()}>Войти</Link>
+            </LoginNav>
         </AuthLayout>
     );
 }

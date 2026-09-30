@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DataTransferObjects\Content;
 
+use App\Support\TranslationInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 
@@ -20,7 +21,9 @@ use Illuminate\Support\Carbon;
 final readonly class ContentPageData
 {
     /**
-     * @param  array<string, PageTranslationShape>  $translations  locale-keyed
+     * @param  string  $slug  empty when the editor left it blank: the service makes one from the title
+     * @param  array<string, PageTranslationShape>  $translations  locale-keyed texts to save
+     * @param  list<string>  $clearedLocales  languages the editor emptied: their texts are removed
      */
     public function __construct(
         public ?int $parentId,
@@ -29,6 +32,7 @@ final readonly class ContentPageData
         public string $template,
         public ?Carbon $publishedAt,
         public array $translations,
+        public array $clearedLocales = [],
     ) {}
 
     public static function fromRequest(FormRequest $request): self
@@ -46,41 +50,25 @@ final readonly class ContentPageData
             $publishedAt = Carbon::now();
         }
 
-        $rawTranslations = (array) ($request->validated('translations', []) ?? []);
-        $translations = [];
-
-        foreach ($rawTranslations as $locale => $data) {
-            $title = (string) ($data['title'] ?? '');
-            if ($title === '') {
-                continue;
-            }
-
-            $translations[(string) $locale] = [
-                'title' => $title,
-                'meta_title' => self::nullableString($data['meta_title'] ?? null),
-                'meta_description' => self::nullableString($data['meta_description'] ?? null),
-            ];
-        }
+        $changes = TranslationInput::split(
+            (array) ($request->validated('translations', []) ?? []),
+            'title',
+            ['meta_title', 'meta_description'],
+        );
 
         $parentRaw = $request->validated('parent_id');
 
+        /** @var array<string, PageTranslationShape> $translations */
+        $translations = $changes['save'];
+
         return new self(
             parentId: $parentRaw !== null && $parentRaw !== '' ? (int) $parentRaw : null,
-            slug: (string) $request->validated('slug'),
+            slug: (string) $request->validated('slug', ''),
             status: $status,
             template: (string) ($request->validated('template') ?: 'default'),
             publishedAt: $publishedAt,
             translations: $translations,
+            clearedLocales: $changes['clear'],
         );
-    }
-
-    private static function nullableString(mixed $value): ?string
-    {
-        if ($value === null) {
-            return null;
-        }
-        $value = (string) $value;
-
-        return $value === '' ? null : $value;
     }
 }

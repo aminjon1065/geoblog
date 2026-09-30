@@ -27,6 +27,15 @@ class MediaPolicy
         return $user->hasPermissionTo('media.update');
     }
 
+    /**
+     * Gate of the bulk "Удалить навсегда": whoever passes it still needs
+     * {@see self::delete()} for every file of the batch.
+     */
+    public function deleteAny(User $user): bool
+    {
+        return $user->hasPermissionTo('media.delete');
+    }
+
     public function delete(User $user, Media $media): bool
     {
         return $user->hasPermissionTo('media.delete');

@@ -1,34 +1,36 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEvent } from 'react';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Head, useForm } from '@inertiajs/react';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import {
+    FormRow,
+    FormTable,
+    SubmitButton,
+    fieldClass,
+} from '@/components/admin/form-table';
+import {
+    RoleCheckboxes,
+    generatePassword,
+} from '@/components/admin/users/user-form-fields';
+import type { RoleOption } from '@/components/admin/users/user-form-fields';
+import { PageHeader } from '@/components/wp/page-header';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { store } from '@/routes/admin/users';
 
-interface Props {
-    roles: string[];
-}
+type Props = {
+    roles: RoleOption[];
+};
 
-interface FormData {
+type FormData = {
     name: string;
     email: string;
     password: string;
     password_confirmation: string;
     roles: string[];
-}
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Users', href: '/admin/users' },
-    { title: 'Create', href: '/admin/users/create' },
-];
+};
 
 export default function UsersCreate({ roles }: Props) {
-    const { data, setData, post, processing, errors } = useForm<FormData>({
+    const [showPassword, setShowPassword] = useState(false);
+    const { data, setData, submit, processing, errors } = useForm<FormData>({
         name: '',
         email: '',
         password: '',
@@ -36,108 +38,145 @@ export default function UsersCreate({ roles }: Props) {
         roles: [],
     });
 
-    function submit(e: FormEvent) {
-        e.preventDefault();
-        post('/admin/users');
-    }
+    const onSubmit = (event: FormEvent) => {
+        event.preventDefault();
+        submit(store());
+    };
 
-    function toggleRole(name: string, checked: boolean) {
-        const next = checked
-            ? Array.from(new Set([...data.roles, name]))
-            : data.roles.filter((r) => r !== name);
-        setData('roles', next);
-    }
+    const fillGeneratedPassword = () => {
+        const password = generatePassword();
+        setData((current) => ({
+            ...current,
+            password,
+            password_confirmation: password,
+        }));
+        setShowPassword(true);
+    };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create User" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading title="Create User" description="Provision a new admin account." />
+        <AppLayout>
+            <Head title="Добавить пользователя" />
 
-                <form
-                    onSubmit={submit}
-                    className="max-w-2xl space-y-6 rounded-lg border bg-card p-6"
-                >
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
+            <PageHeader title="Добавить пользователя" />
+            <p className="mt-1 text-[13px] text-[#50575e]">
+                Создайте учётную запись для нового участника команды и выберите
+                его роль.
+            </p>
+
+            <form onSubmit={onSubmit} noValidate>
+                <FormTable>
+                    <FormRow
+                        label="Имя"
+                        htmlFor="name"
+                        required
+                        error={errors.name}
+                    >
+                        <input
                             id="name"
+                            className={fieldClass.regular}
                             value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
+                            onChange={(event) =>
+                                setData('name', event.target.value)
+                            }
                             autoComplete="name"
+                            required
                         />
-                        <InputError message={errors.name} />
-                    </div>
+                    </FormRow>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
+                    <FormRow
+                        label="E-mail"
+                        htmlFor="email"
+                        required
+                        error={errors.email}
+                    >
+                        <input
                             id="email"
                             type="email"
+                            className={fieldClass.regular}
                             value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
+                            onChange={(event) =>
+                                setData('email', event.target.value)
+                            }
                             autoComplete="email"
+                            required
                         />
-                        <InputError message={errors.email} />
-                    </div>
+                    </FormRow>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
+                    <FormRow
+                        label="Пароль"
+                        htmlFor="password"
+                        required
+                        error={errors.password}
+                        description="Сообщите пароль пользователю — после входа он сможет сменить его в своём профиле."
+                    >
+                        <div className="flex flex-wrap items-center gap-2">
+                            <input
                                 id="password"
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
+                                className={fieldClass.regular}
                                 value={data.password}
-                                onChange={(e) => setData('password', e.target.value)}
-                                autoComplete="new-password"
-                            />
-                            <InputError message={errors.password} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password_confirmation">Confirm password</Label>
-                            <Input
-                                id="password_confirmation"
-                                type="password"
-                                value={data.password_confirmation}
-                                onChange={(e) =>
-                                    setData('password_confirmation', e.target.value)
+                                onChange={(event) =>
+                                    setData('password', event.target.value)
                                 }
                                 autoComplete="new-password"
+                                required
                             />
+                            <button
+                                type="button"
+                                className="wp-button"
+                                onClick={fillGeneratedPassword}
+                            >
+                                Сгенерировать пароль
+                            </button>
+                            <button
+                                type="button"
+                                className="wp-button"
+                                onClick={() =>
+                                    setShowPassword((value) => !value)
+                                }
+                                aria-pressed={showPassword}
+                            >
+                                {showPassword ? 'Скрыть' : 'Показать'}
+                            </button>
                         </div>
-                    </div>
+                    </FormRow>
 
-                    <div className="space-y-2">
-                        <Label>Roles</Label>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {roles.map((role) => (
-                                <label
-                                    key={role}
-                                    className="flex cursor-pointer items-center gap-2 rounded-md border bg-background p-2 text-sm"
-                                >
-                                    <Checkbox
-                                        checked={data.roles.includes(role)}
-                                        onCheckedChange={(checked) =>
-                                            toggleRole(role, checked === true)
-                                        }
-                                    />
-                                    <span>{role}</span>
-                                </label>
-                            ))}
-                        </div>
-                        <InputError message={errors.roles} />
-                    </div>
+                    <FormRow
+                        label="Подтверждение пароля"
+                        htmlFor="password_confirmation"
+                        required
+                        error={errors.password_confirmation}
+                    >
+                        <input
+                            id="password_confirmation"
+                            type={showPassword ? 'text' : 'password'}
+                            className={fieldClass.regular}
+                            value={data.password_confirmation}
+                            onChange={(event) =>
+                                setData(
+                                    'password_confirmation',
+                                    event.target.value,
+                                )
+                            }
+                            autoComplete="new-password"
+                            required
+                        />
+                    </FormRow>
 
-                    <div className="flex items-center gap-3">
-                        <Button type="submit" disabled={processing}>
-                            Create user
-                        </Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/users">Cancel</Link>
-                        </Button>
-                    </div>
-                </form>
-            </div>
+                    <FormRow label="Роль" error={errors.roles}>
+                        <RoleCheckboxes
+                            roles={roles}
+                            value={data.roles}
+                            onChange={(value) => setData('roles', value)}
+                            errors={errors}
+                        />
+                    </FormRow>
+                </FormTable>
+
+                <SubmitButton processing={processing}>
+                    Добавить пользователя
+                </SubmitButton>
+            </form>
         </AppLayout>
     );
 }

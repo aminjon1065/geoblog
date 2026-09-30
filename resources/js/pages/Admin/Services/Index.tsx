@@ -1,154 +1,298 @@
 import { Head, Link, router } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/admin/content/confirm-dialog';
+import { formatDateTime } from '@/components/admin/content/format';
+import {
+    ListHeaderRow,
+    RowCheckbox,
+} from '@/components/admin/content/list-table-parts';
+import { LocaleBadges } from '@/components/admin/content/locale-badges';
+import type { Paginated } from '@/components/admin/content/types';
+import { useViewLocale } from '@/components/admin/content/use-view-locale';
+import {
+    BulkActions,
+    ListViews,
+    RowAction,
+    RowActions,
+    SearchBox,
+    TablePagination,
+    pluralRu,
+    useRowSelection,
+} from '@/components/wp/list-table';
+import type { BulkAction, ListView } from '@/components/wp/list-table';
+import { PageHeader } from '@/components/wp/page-header';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { cn } from '@/lib/utils';
+import { bulk, create, destroy, edit } from '@/routes/admin/services';
+import { show as publicService } from '@/routes/services';
 
-interface ServiceTranslation {
-    id: number;
-    locale: string;
-    title: string;
-}
-
-interface Service {
+type ServiceRow = {
     id: number;
     slug: string;
+    title: string;
     is_active: boolean;
     sort_order: number;
-    translations: ServiceTranslation[];
-}
+    locales: string[];
+    updated_at: string | null;
+};
 
-interface Props {
-    services: Service[];
-}
+type Props = {
+    services: Paginated<ServiceRow>;
+    filters: {
+        search: string | null;
+        status: 'active' | 'inactive' | null;
+    };
+    counts: {
+        all: number;
+        active: number;
+        inactive: number;
+    };
+};
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Services', href: '/admin/services' },
-];
+const COLUMNS = ['Название', 'Ярлык', 'Языки', 'Порядок', 'Изменена'];
 
-export default function ServicesIndex({ services }: Props) {
+export default function ServicesIndex({ services, filters, counts }: Props) {
     const { can } = usePermissions();
-    const canCreate = can('services.create');
+    const viewLocale = useViewLocale();
+    const { confirm, dialog } = useConfirmDialog();
     const canUpdate = can('services.update');
     const canDelete = can('services.delete');
+    const selection = useRowSelection(services.data.map((row) => row.id));
 
-    function handleDelete(id: number) {
-        router.delete(`/admin/services/${id}`, { preserveScroll: true });
-    }
+    const views: ListView[] = [
+        { key: 'all', label: 'Все', count: counts.all },
+        { key: 'active', label: 'Активные', count: counts.active },
+        { key: 'inactive', label: 'Неактивные', count: counts.inactive },
+    ];
+
+    const bulkActions: BulkAction[] = [
+        ...(canUpdate
+            ? [
+                  { value: 'activate', label: 'Показывать на сайте' },
+                  { value: 'deactivate', label: 'Скрыть с сайта' },
+              ]
+            : []),
+        ...(canDelete ? [{ value: 'delete', label: 'Удалить' }] : []),
+    ];
+    const selectable = bulkActions.length > 0;
+
+    const run = (action: string, ids: number[]) =>
+        router.post(
+            bulk.url(),
+            { action, ids },
+            { preserveScroll: true, onSuccess: () => selection.clear() },
+        );
+
+    const applyBulk = (action: string) => {
+        const ids = selection.selected;
+
+        if (ids.length === 0) {
+            return;
+        }
+
+        if (action === 'delete') {
+            confirm({
+                title: `Удалить ${ids.length} ${pluralRu(ids.length, 'услугу', 'услуги', 'услуг')}?`,
+                description: 'Отмеченные услуги пропадут с сайта и из списка.',
+                onConfirm: () => run('delete', ids),
+            });
+
+            return;
+        }
+
+        run(action, ids);
+    };
+
+    const askDelete = (service: ServiceRow) =>
+        confirm({
+            title: 'Удалить услугу?',
+            description: `Услуга «${service.title}» пропадёт с сайта и из списка.`,
+            onConfirm: () =>
+                router.delete(destroy.url(service.id), {
+                    preserveScroll: true,
+                }),
+        });
+
+    const tablenav = (position: 'top' | 'bottom') => (
+        <div className="tablenav">
+            <BulkActions
+                actions={bulkActions}
+                disabled={selection.selected.length === 0}
+                onApply={applyBulk}
+                idSuffix={position}
+            />
+            <TablePagination meta={services} />
+        </div>
+    );
+
+    const headerRow = (position: 'head' | 'foot') => (
+        <ListHeaderRow
+            columns={COLUMNS}
+            position={position}
+            selectable={selectable}
+            allSelected={selection.allSelected}
+            onToggleAll={selection.toggleAll}
+        />
+    );
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Services" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <Heading
-                        title="Services"
-                        description="Manage your services catalog"
-                    />
-                    {canCreate && (
-                        <Button asChild>
-                            <Link href="/admin/services/create">New Service</Link>
-                        </Button>
-                    )}
-                </div>
+        <AppLayout>
+            <Head title="Услуги" />
 
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Title
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Slug
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Status
-                                </th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Order
-                                </th>
-                                <th className="px-4 py-3 text-right font-medium">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {services.map((service) => (
+            <PageHeader
+                title="Услуги"
+                action={
+                    can('services.create')
+                        ? { label: 'Добавить услугу', href: create.url() }
+                        : null
+                }
+                subtitle={
+                    filters.search
+                        ? `Результаты поиска для «${filters.search}»`
+                        : undefined
+                }
+            />
+
+            <div className="flex flex-wrap items-end justify-between gap-2">
+                <ListViews
+                    views={views}
+                    current={filters.status ?? 'all'}
+                    param="status"
+                />
+                <SearchBox label="Поиск услуг" defaultValue={filters.search} />
+            </div>
+
+            {tablenav('top')}
+
+            <div className="overflow-x-auto">
+                <table className="wp-list-table">
+                    <thead>{headerRow('head')}</thead>
+                    <tbody>
+                        {services.data.map((service) => {
+                            const locale = service.is_active
+                                ? viewLocale(service.locales)
+                                : null;
+
+                            return (
                                 <tr
                                     key={service.id}
-                                    className="border-b last:border-0"
+                                    className={cn(
+                                        selection.isSelected(service.id) &&
+                                            'is-selected',
+                                    )}
                                 >
-                                    <td className="px-4 py-3">
-                                        <Link
-                                            href={`/admin/services/${service.id}/edit`}
-                                            className="font-medium hover:underline"
-                                        >
-                                            {service.translations[0]?.title ??
-                                                service.slug}
-                                        </Link>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {service.slug}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Badge
-                                            variant={
-                                                service.is_active
-                                                    ? 'default'
-                                                    : 'secondary'
+                                    {selectable && (
+                                        <RowCheckbox
+                                            id={service.id}
+                                            label={`Выбрать «${service.title}»`}
+                                            checked={selection.isSelected(
+                                                service.id,
+                                            )}
+                                            onChange={() =>
+                                                selection.toggle(service.id)
                                             }
-                                        >
-                                            {service.is_active
-                                                ? 'Active'
-                                                : 'Inactive'}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {service.sort_order}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                        />
+                                    )}
+                                    <td className="column-primary">
+                                        <strong>
+                                            {canUpdate ? (
+                                                <Link
+                                                    href={edit.url(service.id)}
+                                                    className="row-title"
+                                                >
+                                                    {service.title}
+                                                </Link>
+                                            ) : (
+                                                service.title
+                                            )}
+                                            {!service.is_active && (
+                                                <span className="post-state">
+                                                    {' '}
+                                                    — Скрыта
+                                                </span>
+                                            )}
+                                        </strong>
+                                        <RowActions>
                                             {canUpdate && (
-                                                <Button variant="outline" size="sm" asChild>
+                                                <RowAction>
                                                     <Link
-                                                        href={`/admin/services/${service.id}/edit`}
+                                                        href={edit.url(
+                                                            service.id,
+                                                        )}
+                                                        aria-label={`Изменить «${service.title}»`}
                                                     >
-                                                        Edit
+                                                        Изменить
                                                     </Link>
-                                                </Button>
+                                                </RowAction>
                                             )}
                                             {canDelete && (
-                                                <ConfirmButton
-                                                    title="Delete service?"
-                                                    description={`"${service.translations[0]?.title ?? service.slug}" will be permanently removed.`}
-                                                    onConfirm={() => handleDelete(service.id)}
-                                                >
-                                                    Delete
-                                                </ConfirmButton>
+                                                <RowAction danger>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            askDelete(service)
+                                                        }
+                                                        aria-label={`Удалить «${service.title}»`}
+                                                    >
+                                                        Удалить
+                                                    </button>
+                                                </RowAction>
                                             )}
-                                        </div>
+                                            {locale && (
+                                                <RowAction>
+                                                    <a
+                                                        href={publicService.url(
+                                                            {
+                                                                locale,
+                                                                slug: service.slug,
+                                                            },
+                                                        )}
+                                                        aria-label={`Просмотреть «${service.title}» на сайте`}
+                                                    >
+                                                        Просмотреть
+                                                    </a>
+                                                </RowAction>
+                                            )}
+                                        </RowActions>
+                                    </td>
+                                    <td>
+                                        <code className="text-[12px]">
+                                            {service.slug}
+                                        </code>
+                                    </td>
+                                    <td>
+                                        <LocaleBadges
+                                            available={service.locales}
+                                        />
+                                    </td>
+                                    <td>{service.sort_order}</td>
+                                    <td>
+                                        {formatDateTime(service.updated_at)}
                                     </td>
                                 </tr>
-                            ))}
-                            {services.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-4 py-8 text-center text-muted-foreground"
-                                    >
-                                        No services found.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            );
+                        })}
+                        {services.data.length === 0 && (
+                            <tr className="no-items">
+                                <td
+                                    colSpan={
+                                        COLUMNS.length + (selectable ? 1 : 0)
+                                    }
+                                >
+                                    {filters.search || filters.status
+                                        ? 'Услуг по этому запросу не найдено.'
+                                        : 'Услуг пока нет.'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                    <tfoot>{headerRow('foot')}</tfoot>
+                </table>
             </div>
+
+            {tablenav('bottom')}
+
+            {dialog}
         </AppLayout>
     );
 }

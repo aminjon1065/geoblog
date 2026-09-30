@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+@php($isAdminScreen = request()->is('admin', 'admin/*', 'dashboard', 'settings', 'settings/*', 'login', 'register', 'forgot-password', 'reset-password/*', 'two-factor-challenge', 'user/confirm-password', 'email/verify', 'email/verify/*'))
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['wp-admin' => $isAdminScreen])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="robots" content="index, follow">
+        {{-- Admin screens, sign-in and signed previews of drafts stay out of search engines. --}}
+        <meta name="robots" content="{{ $isAdminScreen || ($noindex ?? false) ? 'noindex, nofollow' : 'index, follow' }}">
         <meta name="author" content="{{ config('app.name') }}">
 
         <meta property="og:site_name" content="{{ config('app.name') }}">

@@ -13,7 +13,7 @@ final class RichTextBlock implements BlockType
 
     public function label(): string
     {
-        return 'Rich Text';
+        return 'Текстовый блок';
     }
 
     public function settingsSchema(): array
@@ -25,7 +25,7 @@ final class RichTextBlock implements BlockType
     {
         return [
             // Authored via TipTap; sanitised through HtmlSanitizer before persistence.
-            'body' => 'string',
+            'body' => 'html',
         ];
     }
 

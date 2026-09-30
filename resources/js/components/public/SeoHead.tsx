@@ -45,36 +45,54 @@ export function SeoHead({
     // Phase 7 — read SEO settings from shared props with no-op fallbacks. Page-specific
     // values still win; settings only fill in when the consumer didn't pass anything.
     const defaultMetaTitle = (settings?.seo_default_meta_title ?? '') as string;
-    const defaultMetaDescription = (settings?.seo_default_meta_description ?? '') as string;
-    const googleVerification = (settings?.seo_google_site_verification ?? '') as string;
+    const defaultMetaDescription = (settings?.seo_default_meta_description ??
+        '') as string;
+    const googleVerification = (settings?.seo_google_site_verification ??
+        '') as string;
     const gaId = (settings?.seo_google_analytics_id ?? '') as string;
 
-    const effectiveTitle = title ?? (defaultMetaTitle !== '' ? defaultMetaTitle : null);
-    const effectiveDescription = description ?? (defaultMetaDescription !== '' ? defaultMetaDescription : null);
+    const effectiveTitle =
+        title ?? (defaultMetaTitle !== '' ? defaultMetaTitle : null);
+    const effectiveDescription =
+        description ??
+        (defaultMetaDescription !== '' ? defaultMetaDescription : null);
 
-    const structuredArray: Record<string, unknown>[] = structuredData == null
-        ? []
-        : Array.isArray(structuredData)
-            ? structuredData
-            : [structuredData];
+    const structuredArray: Record<string, unknown>[] =
+        structuredData == null
+            ? []
+            : Array.isArray(structuredData)
+              ? structuredData
+              : [structuredData];
 
     return (
         <Head title={effectiveTitle ?? undefined}>
-            {effectiveDescription && <meta name="description" content={effectiveDescription} />}
+            {effectiveDescription && (
+                <meta name="description" content={effectiveDescription} />
+            )}
 
             {/* OpenGraph */}
             <meta property="og:type" content={ogType} />
-            {effectiveTitle && <meta property="og:title" content={effectiveTitle} />}
-            {effectiveDescription && (
-                <meta property="og:description" content={effectiveDescription} />
+            {effectiveTitle && (
+                <meta property="og:title" content={effectiveTitle} />
             )}
-            {resolvedCanonical && <meta property="og:url" content={resolvedCanonical} />}
+            {effectiveDescription && (
+                <meta
+                    property="og:description"
+                    content={effectiveDescription}
+                />
+            )}
+            {resolvedCanonical && (
+                <meta property="og:url" content={resolvedCanonical} />
+            )}
             {locale && <meta property="og:locale" content={locale} />}
             {image && <meta property="og:image" content={image} />}
 
             {/* Article-specific OpenGraph */}
             {ogType === 'article' && publishedTime && (
-                <meta property="article:published_time" content={publishedTime} />
+                <meta
+                    property="article:published_time"
+                    content={publishedTime}
+                />
             )}
             {ogType === 'article' && modifiedTime && (
                 <meta property="article:modified_time" content={modifiedTime} />
@@ -84,16 +102,27 @@ export function SeoHead({
             )}
 
             {/* Twitter Card */}
-            <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
-            {effectiveTitle && <meta name="twitter:title" content={effectiveTitle} />}
+            <meta
+                name="twitter:card"
+                content={image ? 'summary_large_image' : 'summary'}
+            />
+            {effectiveTitle && (
+                <meta name="twitter:title" content={effectiveTitle} />
+            )}
             {effectiveDescription && (
-                <meta name="twitter:description" content={effectiveDescription} />
+                <meta
+                    name="twitter:description"
+                    content={effectiveDescription}
+                />
             )}
             {image && <meta name="twitter:image" content={image} />}
 
             {/* Webmaster / verification (Phase 7) */}
             {googleVerification !== '' && (
-                <meta name="google-site-verification" content={googleVerification} />
+                <meta
+                    name="google-site-verification"
+                    content={googleVerification}
+                />
             )}
 
             {/* Google Analytics (Phase 7). Two tags emitted: the loader script and
@@ -101,20 +130,23 @@ export function SeoHead({
             {gaId !== '' && (
                 <script
                     async
-                    src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+                    src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`}
                 />
             )}
             {gaId !== '' && (
                 <script
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{
-                        __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId.replace(/'/g, "\\'")}');`,
+                        // JSON.stringify quotes and escapes the id; "<" is escaped so the
+                        // value can never close the <script> element.
+                        __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ${JSON.stringify(gaId).replace(/</g, '\\u003c')});`,
                     }}
                 />
             )}
 
             {/* Canonical */}
-            {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}
+            {resolvedCanonical && (
+                <link rel="canonical" href={resolvedCanonical} />
+            )}
 
             {/* hreflang alternates (Google requires them on every page) */}
             {alternates.map((alt) => (
@@ -131,7 +163,6 @@ export function SeoHead({
                 <script
                     key={`ld-json-${i}`}
                     type="application/ld+json"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{
                         __html: JSON.stringify(data).replace(/</g, '\\u003c'),
                     }}

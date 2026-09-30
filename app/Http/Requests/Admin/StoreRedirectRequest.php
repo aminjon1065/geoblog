@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Concerns\PreventsRedirectLoops;
 use App\Models\Redirect;
 use App\Services\Seo\RedirectResolver;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class StoreRedirectRequest extends FormRequest
 {
+    use PreventsRedirectLoops;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', Redirect::class) ?? false;
@@ -26,6 +29,7 @@ class StoreRedirectRequest extends FormRequest
         $from = (string) $this->input('from_path', '');
         $this->merge([
             'from_path' => RedirectResolver::normalize($from),
+            'to_path' => trim((string) $this->input('to_path', '')),
         ]);
     }
 
@@ -38,6 +42,16 @@ class StoreRedirectRequest extends FormRequest
             'from_path' => ['required', 'string', 'max:512', Rule::unique('redirects', 'from_path')],
             'to_path' => ['required', 'string', 'max:1024'],
             'status_code' => ['required', 'integer', Rule::in([301, 302])],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'from_path.unique' => 'Для этого адреса уже есть редирект.',
         ];
     }
 }

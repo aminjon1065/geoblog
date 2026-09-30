@@ -15,6 +15,10 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use RuntimeException;
 
+/**
+ * Folders of the media library, managed from the "Папки" dialog of the
+ * library screen — every action returns to that screen.
+ */
 class MediaFolderController extends Controller implements HasMiddleware
 {
     public function __construct(private readonly MediaFolderService $service) {}
@@ -32,8 +36,7 @@ class MediaFolderController extends Controller implements HasMiddleware
     {
         $folder = $this->service->create(MediaFolderData::fromRequest($request));
 
-        return to_route('admin.media.index', ['folder' => $folder->id])
-            ->with('success', 'Folder created.');
+        return back()->with('success', "Папка «{$folder->name}» создана.");
     }
 
     public function update(UpdateMediaFolderRequest $request, MediaFolder $mediaFolder): RedirectResponse
@@ -44,7 +47,7 @@ class MediaFolderController extends Controller implements HasMiddleware
             return back()->withErrors(['parent_id' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Folder updated.');
+        return back()->with('success', 'Папка сохранена.');
     }
 
     public function destroy(MediaFolder $mediaFolder): RedirectResponse
@@ -57,7 +60,6 @@ class MediaFolderController extends Controller implements HasMiddleware
             return back()->withErrors(['delete' => $e->getMessage()]);
         }
 
-        return to_route('admin.media.index', ['folder' => $mediaFolder->parent_id])
-            ->with('success', 'Folder deleted.');
+        return back()->with('success', "Папка «{$mediaFolder->name}» удалена.");
     }
 }

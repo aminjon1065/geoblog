@@ -39,7 +39,7 @@ final class MediaFolderService
     public function delete(MediaFolder $folder): void
     {
         if ($folder->files()->exists() || $folder->children()->exists()) {
-            throw new RuntimeException('Folder is not empty.');
+            throw new RuntimeException('Папку нельзя удалить: в ней есть файлы или вложенные папки. Сначала перенесите или удалите их.');
         }
 
         $folder->delete();
@@ -57,13 +57,13 @@ final class MediaFolderService
         }
 
         if ($newParentId === $folder->id) {
-            throw new RuntimeException('A folder cannot be its own parent.');
+            throw new RuntimeException('Папку нельзя вложить саму в себя.');
         }
 
         $cursor = MediaFolder::find($newParentId);
         while ($cursor !== null) {
             if ($cursor->id === $folder->id) {
-                throw new RuntimeException('Cannot move a folder into one of its own descendants.');
+                throw new RuntimeException('Папку нельзя перенести в её собственную вложенную папку.');
             }
             $cursor = $cursor->parent;
         }

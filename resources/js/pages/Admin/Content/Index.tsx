@@ -1,159 +1,337 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ConfirmButton } from '@/components/admin/confirm-button';
-import { Pagination, type PaginatedShape } from '@/components/admin/pagination';
-import { SearchBar } from '@/components/admin/search-bar';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import GetStatusBadge from '@/helpers/getStatusBadge';
+import { useConfirmDialog } from '@/components/admin/content/confirm-dialog';
+import { formatDateTime } from '@/components/admin/content/format';
+import {
+    ListHeaderRow,
+    RowCheckbox,
+} from '@/components/admin/content/list-table-parts';
+import { LocaleBadges } from '@/components/admin/content/locale-badges';
+import type { Paginated } from '@/components/admin/content/types';
+import { useViewLocale } from '@/components/admin/content/use-view-locale';
+import {
+    BulkActions,
+    ListViews,
+    RowAction,
+    RowActions,
+    SearchBox,
+    TablePagination,
+    pluralRu,
+    useRowSelection,
+} from '@/components/wp/list-table';
+import type { BulkAction, ListView } from '@/components/wp/list-table';
+import { PageHeader } from '@/components/wp/page-header';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import { cn } from '@/lib/utils';
+import { bulk, create, destroy, edit } from '@/routes/admin/content-pages';
+import { show as publicPage } from '@/routes/content-pages';
 
-interface PageRow {
+type PageRow = {
     id: number;
     slug: string;
-    status: string;
+    status: 'draft' | 'published';
     template: string;
     published_at: string | null;
+    is_scheduled: boolean;
+    is_viewable: boolean;
     title: string;
+    locales: string[];
     parent_id: number | null;
+    parent_title: string | null;
+    author: string | null;
     updated_at: string | null;
-}
+};
 
-interface PaginatedPages extends PaginatedShape {
-    data: PageRow[];
-}
-
-interface Props {
-    pages: PaginatedPages;
+type Props = {
+    pages: Paginated<PageRow>;
     filters: {
         search: string | null;
         status: 'draft' | 'published' | null;
     };
-}
+    counts: {
+        all: number;
+        published: number;
+        draft: number;
+    };
+};
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Pages', href: '/admin/content-pages' },
-];
+const COLUMNS = ['Заголовок', 'Адрес', 'Автор', 'Языки', 'Дата'];
 
-export default function ContentIndex({ pages, filters }: Props) {
-    const { can } = usePermissions();
-    const canCreate = can('pages.create');
-    const canDelete = can('pages.delete');
-
-    function handleDelete(id: number) {
-        router.delete(`/admin/content-pages/${id}`, { preserveScroll: true });
+function DateCell({ page }: { page: PageRow }) {
+    if (page.status === 'published' && page.published_at) {
+        return (
+            <>
+                {page.is_scheduled ? 'Запланирована' : 'Опубликована'}
+                <br />
+                {formatDateTime(page.published_at)}
+            </>
+        );
     }
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Pages" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <Heading
-                        title="Pages"
-                        description="Build dynamic pages from reusable content blocks."
-                    />
-                    {canCreate && (
-                        <Button asChild>
-                            <Link href="/admin/content-pages/create">New Page</Link>
-                        </Button>
-                    )}
-                </div>
+        <>
+            Изменена
+            <br />
+            {formatDateTime(page.updated_at)}
+        </>
+    );
+}
 
-                <SearchBar
-                    url="/admin/content-pages"
-                    search={filters.search}
-                    placeholder="Search by title or slug…"
-                    selects={[
-                        {
-                            name: 'status',
-                            label: 'Status',
-                            value: filters.status ?? '',
-                            options: [
-                                { value: 'draft', label: 'Draft' },
-                                { value: 'published', label: 'Published' },
-                            ],
-                        },
-                    ]}
+export default function ContentIndex({ pages, filters, counts }: Props) {
+    const { can } = usePermissions();
+    const viewLocale = useViewLocale();
+    const { confirm, dialog } = useConfirmDialog();
+    const canUpdate = can('pages.update');
+    const canDelete = can('pages.delete');
+    const selection = useRowSelection(pages.data.map((row) => row.id));
+
+    const views: ListView[] = [
+        { key: 'all', label: 'Все', count: counts.all },
+        { key: 'published', label: 'Опубликованные', count: counts.published },
+        { key: 'draft', label: 'Черновики', count: counts.draft },
+    ];
+
+    const bulkActions: BulkAction[] = [
+        ...(canUpdate
+            ? [
+                  { value: 'publish', label: 'Опубликовать' },
+                  { value: 'draft', label: 'Перевести в черновики' },
+              ]
+            : []),
+        ...(canDelete ? [{ value: 'delete', label: 'Удалить' }] : []),
+    ];
+    const selectable = bulkActions.length > 0;
+
+    const run = (action: string, ids: number[]) =>
+        router.post(
+            bulk.url(),
+            { action, ids },
+            { preserveScroll: true, onSuccess: () => selection.clear() },
+        );
+
+    const applyBulk = (action: string) => {
+        const ids = selection.selected;
+
+        if (ids.length === 0) {
+            return;
+        }
+
+        if (action === 'delete') {
+            confirm({
+                title: `Удалить ${ids.length} ${pluralRu(ids.length, 'страницу', 'страницы', 'страниц')}?`,
+                description: 'Отмеченные страницы и их блоки пропадут с сайта.',
+                onConfirm: () => run('delete', ids),
+            });
+
+            return;
+        }
+
+        run(action, ids);
+    };
+
+    const askDelete = (page: PageRow) =>
+        confirm({
+            title: 'Удалить страницу?',
+            description: `Страница «${page.title}» и все её блоки пропадут с сайта.`,
+            onConfirm: () =>
+                router.delete(destroy.url(page.id), { preserveScroll: true }),
+        });
+
+    const tablenav = (position: 'top' | 'bottom') => (
+        <div className="tablenav">
+            <BulkActions
+                actions={bulkActions}
+                disabled={selection.selected.length === 0}
+                onApply={applyBulk}
+                idSuffix={position}
+            />
+            <TablePagination meta={pages} />
+        </div>
+    );
+
+    const headerRow = (position: 'head' | 'foot') => (
+        <ListHeaderRow
+            columns={COLUMNS}
+            position={position}
+            selectable={selectable}
+            allSelected={selection.allSelected}
+            onToggleAll={selection.toggleAll}
+        />
+    );
+
+    return (
+        <AppLayout>
+            <Head title="Страницы" />
+
+            <PageHeader
+                title="Страницы"
+                action={
+                    can('pages.create')
+                        ? { label: 'Добавить страницу', href: create.url() }
+                        : null
+                }
+                subtitle={
+                    filters.search
+                        ? `Результаты поиска для «${filters.search}»`
+                        : undefined
+                }
+            />
+
+            <div className="flex flex-wrap items-end justify-between gap-2">
+                <ListViews
+                    views={views}
+                    current={filters.status ?? 'all'}
+                    param="status"
                 />
-
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left font-medium">Title</th>
-                                <th className="px-4 py-3 text-left font-medium">Slug</th>
-                                <th className="px-4 py-3 text-left font-medium">Status</th>
-                                <th className="px-4 py-3 text-left font-medium">
-                                    Updated
-                                </th>
-                                <th className="px-4 py-3 text-right font-medium">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pages.data.map((page) => (
-                                <tr key={page.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3 font-medium">
-                                        <Link
-                                            href={`/admin/content-pages/${page.id}/edit`}
-                                            className="hover:underline"
-                                        >
-                                            {page.title}
-                                        </Link>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        /p/{page.slug}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <GetStatusBadge status={page.status} />
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        {page.updated_at
-                                            ? new Date(page.updated_at).toLocaleDateString()
-                                            : '—'}
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link
-                                                    href={`/admin/content-pages/${page.id}/edit`}
-                                                >
-                                                    Edit
-                                                </Link>
-                                            </Button>
-                                            {canDelete && (
-                                                <ConfirmButton
-                                                    title="Delete page?"
-                                                    description={`"${page.title}" and all of its blocks will be removed.`}
-                                                    onConfirm={() => handleDelete(page.id)}
-                                                >
-                                                    Delete
-                                                </ConfirmButton>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {pages.data.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-4 py-8 text-center text-muted-foreground"
-                                    >
-                                        No pages yet. Click "New Page" to start.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <Pagination meta={pages} />
+                <SearchBox
+                    label="Поиск страниц"
+                    defaultValue={filters.search}
+                />
             </div>
+
+            {tablenav('top')}
+
+            <div className="overflow-x-auto">
+                <table className="wp-list-table">
+                    <thead>{headerRow('head')}</thead>
+                    <tbody>
+                        {pages.data.map((page) => {
+                            const locale = page.is_viewable
+                                ? (viewLocale(page.locales) ?? viewLocale(null))
+                                : null;
+
+                            return (
+                                <tr
+                                    key={page.id}
+                                    className={cn(
+                                        selection.isSelected(page.id) &&
+                                            'is-selected',
+                                    )}
+                                >
+                                    {selectable && (
+                                        <RowCheckbox
+                                            id={page.id}
+                                            label={`Выбрать «${page.title}»`}
+                                            checked={selection.isSelected(
+                                                page.id,
+                                            )}
+                                            onChange={() =>
+                                                selection.toggle(page.id)
+                                            }
+                                        />
+                                    )}
+                                    <td className="column-primary">
+                                        <strong>
+                                            {canUpdate ? (
+                                                <Link
+                                                    href={edit.url(page.id)}
+                                                    className="row-title"
+                                                >
+                                                    {page.parent_id !== null &&
+                                                        '— '}
+                                                    {page.title}
+                                                </Link>
+                                            ) : (
+                                                page.title
+                                            )}
+                                            {page.status === 'draft' && (
+                                                <span className="post-state">
+                                                    {' '}
+                                                    — Черновик
+                                                </span>
+                                            )}
+                                            {page.is_scheduled && (
+                                                <span className="post-state">
+                                                    {' '}
+                                                    — Запланирована
+                                                </span>
+                                            )}
+                                        </strong>
+                                        {page.parent_title && (
+                                            <div className="text-[12px] text-[#646970]">
+                                                Родительская:{' '}
+                                                {page.parent_title}
+                                            </div>
+                                        )}
+                                        <RowActions>
+                                            {canUpdate && (
+                                                <RowAction>
+                                                    <Link
+                                                        href={edit.url(page.id)}
+                                                        aria-label={`Изменить «${page.title}»`}
+                                                    >
+                                                        Изменить
+                                                    </Link>
+                                                </RowAction>
+                                            )}
+                                            {canDelete && (
+                                                <RowAction danger>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            askDelete(page)
+                                                        }
+                                                        aria-label={`Удалить «${page.title}»`}
+                                                    >
+                                                        Удалить
+                                                    </button>
+                                                </RowAction>
+                                            )}
+                                            {locale && (
+                                                <RowAction>
+                                                    <a
+                                                        href={publicPage.url({
+                                                            locale,
+                                                            slug: page.slug,
+                                                        })}
+                                                        aria-label={`Просмотреть «${page.title}» на сайте`}
+                                                    >
+                                                        Просмотреть
+                                                    </a>
+                                                </RowAction>
+                                            )}
+                                        </RowActions>
+                                    </td>
+                                    <td>
+                                        <code className="text-[12px]">
+                                            {page.parent_id === null
+                                                ? `/p/${page.slug}`
+                                                : page.slug}
+                                        </code>
+                                    </td>
+                                    <td>{page.author ?? '—'}</td>
+                                    <td>
+                                        <LocaleBadges
+                                            available={page.locales}
+                                        />
+                                    </td>
+                                    <td>
+                                        <DateCell page={page} />
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {pages.data.length === 0 && (
+                            <tr className="no-items">
+                                <td
+                                    colSpan={
+                                        COLUMNS.length + (selectable ? 1 : 0)
+                                    }
+                                >
+                                    {filters.search || filters.status
+                                        ? 'Страниц по этому запросу не найдено.'
+                                        : 'Страниц пока нет.'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                    <tfoot>{headerRow('foot')}</tfoot>
+                </table>
+            </div>
+
+            {tablenav('bottom')}
+
+            {dialog}
         </AppLayout>
     );
 }

@@ -27,7 +27,7 @@ class MenuItemController extends Controller
             return back()->withErrors(['parent_id' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Item added.');
+        return back()->with('success', 'Пункт меню добавлен.');
     }
 
     public function update(UpdateMenuItemRequest $request, Menu $menu, MenuItem $item): RedirectResponse
@@ -38,7 +38,7 @@ class MenuItemController extends Controller
             return back()->withErrors(['parent_id' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Item updated.');
+        return back()->with('success', 'Пункт меню сохранён.');
     }
 
     public function destroy(Menu $menu, MenuItem $item): RedirectResponse
@@ -53,7 +53,7 @@ class MenuItemController extends Controller
 
         $this->service->delete($item);
 
-        return back()->with('success', 'Item removed.');
+        return back()->with('success', 'Пункт меню удалён.');
     }
 
     public function reorder(ReorderMenuItemsRequest $request, Menu $menu): RedirectResponse
@@ -63,6 +63,6 @@ class MenuItemController extends Controller
 
         $this->service->reorder($menu, $order);
 
-        return back()->with('success', 'Order updated.');
+        return back()->with('success', 'Порядок пунктов сохранён.');
     }
 }

@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -31,10 +32,10 @@ interface ConfirmButtonProps {
  */
 export function ConfirmButton({
     onConfirm,
-    title = 'Are you sure?',
-    description = 'This action cannot be undone.',
-    confirmLabel = 'Delete',
-    cancelLabel = 'Cancel',
+    title = 'Вы уверены?',
+    description = 'Это действие нельзя отменить.',
+    confirmLabel = 'Удалить',
+    cancelLabel = 'Отмена',
     variant = 'destructive',
     size = 'sm',
     disabled,
@@ -58,7 +59,9 @@ export function ConfirmButton({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
-                    <AlertDialogDescription>{description}</AlertDialogDescription>
+                    <AlertDialogDescription>
+                        {description}
+                    </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>

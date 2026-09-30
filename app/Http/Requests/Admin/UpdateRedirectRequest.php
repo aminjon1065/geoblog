@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use App\Concerns\PreventsRedirectLoops;
 use App\Models\Redirect;
 use App\Services\Seo\RedirectResolver;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class UpdateRedirectRequest extends FormRequest
 {
+    use PreventsRedirectLoops;
+
     public function authorize(): bool
     {
         $target = $this->route('redirect');
@@ -24,6 +27,7 @@ class UpdateRedirectRequest extends FormRequest
         $from = (string) $this->input('from_path', '');
         $this->merge([
             'from_path' => RedirectResolver::normalize($from),
+            'to_path' => trim((string) $this->input('to_path', '')),
         ]);
     }
 
@@ -44,6 +48,16 @@ class UpdateRedirectRequest extends FormRequest
             ],
             'to_path' => ['required', 'string', 'max:1024'],
             'status_code' => ['required', 'integer', Rule::in([301, 302])],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'from_path.unique' => 'Для этого адреса уже есть редирект.',
         ];
     }
 }

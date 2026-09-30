@@ -154,3 +154,25 @@ test('password is not present in user activity properties', function () {
         ->not->toContain('password')
         ->not->toContain('two_factor_secret');
 });
+
+test('audit rows and filters carry russian labels', function () {
+    $admin = userWithRole('admin');
+    $this->actingAs($admin);
+
+    activity('auth')->causedBy($admin)->performedOn($admin)->event('login_failed')->log('Failed login attempt.');
+
+    $this->get(route('admin.audit.index', ['log' => 'auth']))
+        ->assertOk()
+        ->assertInertia(function ($page) {
+            $props = $page->toArray()['props'];
+            $row = $props['activities']['data'][0];
+
+            expect($row['event_label'])->toBe('Неудачный вход')
+                ->and($row['log_label'])->toBe('Авторизация')
+                ->and($row['subject_label'])->toBe('Пользователь')
+                ->and(collect($props['logNames'])->firstWhere('value', 'auth')['label'])->toBe('Авторизация')
+                ->and(collect($props['events'])->firstWhere('value', 'login_failed')['label'])->toBe('Неудачный вход');
+
+            return $page;
+        });
+});

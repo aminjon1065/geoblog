@@ -7,16 +7,21 @@ namespace App\Http\Controllers\Admin;
 use App\Cms\Blocks\BlockRegistry;
 use App\DataTransferObjects\Content\ContentPageData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BulkContentPageActionRequest;
 use App\Http\Requests\Admin\StoreContentPageRequest;
 use App\Http\Requests\Admin\UpdateContentPageRequest;
 use App\Http\Resources\ContentPageResource;
 use App\Models\ContentPage;
 use App\Models\Locale;
 use App\Services\Content\ContentPageService;
+use App\Support\RussianPlural;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,24 +46,32 @@ class ContentPageController extends Controller implements HasMiddleware
     {
         $search = $request->string('search')->trim()->toString();
         $status = $request->string('status')->trim()->toString();
+        $status = in_array($status, ['draft', 'published'], true) ? $status : null;
 
         $pages = ContentPage::query()
-            ->with('translation')
-            ->when($search !== '', fn ($q) => $q->where(function ($query) use ($search) {
-                $query->where('slug', 'like', "%{$search}%")
-                    ->orWhereHas('translations', fn ($t) => $t->where('title', 'like', "%{$search}%"));
-            }))
-            ->when(in_array($status, ['draft', 'published'], true), fn ($q) => $q->where('status', $status))
+            ->with(['translations', 'creator:id,name', 'parent.translations'])
+            ->when($search !== '', fn (Builder $query) => $query->where(
+                fn (Builder $inner) => $inner
+                    ->where('slug', 'like', "%{$search}%")
+                    ->orWhereHas('translations', fn (Builder $translation) => $translation->where('title', 'like', "%{$search}%")),
+            ))
+            ->when($status !== null, fn (Builder $query) => $query->where('status', $status))
             ->latest('updated_at')
+            ->latest('id')
             ->paginate(20)
             ->withQueryString()
-            ->through(fn (ContentPage $p) => ContentPageResource::forAdminIndex($p));
+            ->through(fn (ContentPage $page): array => ContentPageResource::forAdminIndex($page));
 
         return Inertia::render('Admin/Content/Index', [
             'pages' => $pages,
             'filters' => [
                 'search' => $search !== '' ? $search : null,
-                'status' => $status !== '' ? $status : null,
+                'status' => $status,
+            ],
+            'counts' => [
+                'all' => ContentPage::query()->count(),
+                'published' => ContentPage::query()->where('status', 'published')->count(),
+                'draft' => ContentPage::query()->where('status', 'draft')->count(),
             ],
         ]);
     }
@@ -66,7 +79,7 @@ class ContentPageController extends Controller implements HasMiddleware
     public function create(): Response
     {
         return Inertia::render('Admin/Content/Create', [
-            'locales' => Locale::where('is_active', true)->orderBy('sort_order')->get(),
+            'locales' => $this->activeLocales(),
             'parents' => $this->parentOptions(),
         ]);
     }
@@ -79,16 +92,16 @@ class ContentPageController extends Controller implements HasMiddleware
         );
 
         return to_route('admin.content-pages.edit', $page)
-            ->with('success', 'Page created. Add blocks below.');
+            ->with('success', 'Страница создана. Теперь добавьте на неё блоки.');
     }
 
     public function edit(ContentPage $contentPage): Response
     {
-        $contentPage->load(['translations', 'blocks.translations']);
+        $contentPage->load(['translations', 'blocks.translations', 'creator:id,name']);
 
         return Inertia::render('Admin/Content/Edit', [
             'page' => ContentPageResource::forAdminEdit($contentPage),
-            'locales' => Locale::where('is_active', true)->orderBy('sort_order')->get(),
+            'locales' => $this->activeLocales(),
             'parents' => $this->parentOptions($contentPage->id),
             // The frontend needs to know which block types exist so the "Add Block"
             // dropdown stays in sync with the registry without a separate config call.
@@ -104,30 +117,105 @@ class ContentPageController extends Controller implements HasMiddleware
             $request->user(),
         );
 
-        return back()->with('success', 'Page updated.');
+        return to_route('admin.content-pages.edit', $contentPage)->with('success', 'Страница обновлена.');
     }
 
     public function destroy(ContentPage $contentPage): RedirectResponse
     {
         $this->service->delete($contentPage);
 
-        return to_route('admin.content-pages.index')->with('success', 'Page deleted.');
+        return to_route('admin.content-pages.index')->with('success', 'Страница удалена.');
     }
 
     /**
-     * Flat option list for the parent selector. Excludes the page being edited so
-     * an admin can't make a page its own parent through the dropdown.
+     * Publish, unpublish or delete the ticked pages.
+     */
+    public function bulk(BulkContentPageActionRequest $request): RedirectResponse
+    {
+        $action = (string) $request->validated('action');
+        $ability = $action === 'delete' ? 'delete' : 'update';
+        $pages = ContentPage::query()->whereKey($request->validated('ids'))->get();
+        $user = $request->user();
+
+        abort_unless(
+            $pages->every(fn (ContentPage $page): bool => $user?->can($ability, $page) ?? false),
+            403,
+        );
+
+        if ($pages->isEmpty()) {
+            return back()->with('error', 'Отмеченные страницы не найдены — возможно, их уже удалили.');
+        }
+
+        DB::transaction(function () use ($pages, $action, $user): void {
+            foreach ($pages as $page) {
+                match ($action) {
+                    'publish' => $this->service->setStatus($page, 'published', $user),
+                    'draft' => $this->service->setStatus($page, 'draft', $user),
+                    default => $this->service->delete($page),
+                };
+            }
+        });
+
+        $forms = match ($action) {
+            'publish' => ':count страница опубликована|:count страницы опубликованы|:count страниц опубликовано',
+            'draft' => ':count страница переведена в черновики|:count страницы переведены в черновики|:count страниц переведено в черновики',
+            default => ':count страница удалена|:count страницы удалены|:count страниц удалено',
+        };
+
+        return back()->with('success', RussianPlural::format($forms, $pages->count()).'.');
+    }
+
+    /**
+     * Option list for the parent selector. Leaves out the page being edited
+     * and its subpages, so the dropdown cannot turn the tree into a loop.
      *
-     * @return list<array{id: int, slug: string}>
+     * @return list<array{id: int, slug: string, title: string}>
      */
     private function parentOptions(?int $excludeId = null): array
     {
-        return ContentPage::query()
-            ->when($excludeId !== null, fn ($q) => $q->where('id', '!=', $excludeId))
+        $pages = ContentPage::query()
+            ->with('translations')
             ->orderBy('slug')
-            ->get(['id', 'slug'])
-            ->map(fn (ContentPage $p): array => ['id' => $p->id, 'slug' => $p->slug])
+            ->get(['id', 'slug', 'parent_id']);
+
+        $excluded = $excludeId !== null ? $this->withDescendants($pages, $excludeId) : [];
+
+        return $pages
+            ->reject(fn (ContentPage $page): bool => in_array($page->id, $excluded, true))
+            ->map(fn (ContentPage $page): array => [
+                'id' => $page->id,
+                'slug' => $page->slug,
+                'title' => ContentPageResource::title($page),
+            ])
+            ->values()
             ->all();
+    }
+
+    /**
+     * @param  Collection<int, ContentPage>  $pages
+     * @return list<int>
+     */
+    private function withDescendants(Collection $pages, int $rootId): array
+    {
+        $childrenOf = $pages->groupBy('parent_id');
+        $ids = [];
+        $queue = [$rootId];
+
+        while ($queue !== []) {
+            $id = array_shift($queue);
+
+            if (in_array($id, $ids, true)) {
+                continue;
+            }
+
+            $ids[] = $id;
+
+            foreach ($childrenOf->get($id, collect()) as $child) {
+                $queue[] = $child->id;
+            }
+        }
+
+        return $ids;
     }
 
     /**
@@ -146,5 +234,13 @@ class ContentPageController extends Controller implements HasMiddleware
         }
 
         return $out;
+    }
+
+    /**
+     * @return Collection<int, Locale>
+     */
+    private function activeLocales(): Collection
+    {
+        return Locale::query()->where('is_active', true)->orderBy('sort_order')->get();
     }
 }

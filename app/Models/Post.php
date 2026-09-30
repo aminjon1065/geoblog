@@ -16,6 +16,16 @@ class Post extends Model
 {
     use LogsActivity, SoftDeletes;
 
+    public const STATUS_DRAFT = 'draft';
+
+    /** Sent for review by someone without the publish permission. */
+    public const STATUS_PENDING = 'pending';
+
+    /** Live, or scheduled when `published_at` is still in the future. */
+    public const STATUS_PUBLISHED = 'published';
+
+    public const STATUS_ARCHIVED = 'archived';
+
     protected $fillable = [
         'slug',
         'status',
@@ -25,10 +35,16 @@ class Post extends Model
         'author_id',
     ];
 
-    protected $casts = [
-        'published_at' => 'datetime',
-        'is_featured' => 'boolean',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'published_at' => 'datetime',
+            'is_featured' => 'boolean',
+        ];
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -67,23 +83,61 @@ class Post extends Model
         return $this->belongsTo(User::class, 'author_id');
     }
 
+    /**
+     * The post's featured image ("Изображение записи"): the cover on its page
+     * and the picture of shared links.
+     */
     public function ogImage(): BelongsTo
     {
         return $this->belongsTo(Media::class, 'og_image_id');
     }
 
+    /* State */
+
+    /** Published with a date still ahead: the site shows it from that moment. */
+    public function isScheduled(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED
+            && $this->published_at !== null
+            && $this->published_at->isFuture();
+    }
+
+    /** Visible on the site right now. */
+    public function isLive(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED
+            && $this->published_at !== null
+            && ! $this->published_at->isFuture();
+    }
+
     /* Scopes */
 
-    public function scopePublished($query)
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopePublished(Builder $query): Builder
     {
         return $query
-            ->where('status', 'published')
+            ->where('status', self::STATUS_PUBLISHED)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
     }
 
     /**
      * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeScheduled(Builder $query): Builder
+    {
+        return $query
+            ->where('status', self::STATUS_PUBLISHED)
+            ->where('published_at', '>', now());
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
      */
     public function scopeFeatured(Builder $query): Builder
     {
